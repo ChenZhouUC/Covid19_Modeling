@@ -150,7 +150,7 @@ knitr::include_graphics("predict.png")
 
 ## 时滞系统参数拟合
 
-为方便表达，我们将模型中的三个系统参数记作一个整体：$\theta = [\kappa, \mu, \tau]^T$。由于微分方程时滞系统模型一般缺乏解析解，尤其在时滞参数未确定的情况下，利用解析方式去求得系统参数估计值几乎不具备可行性。一种效率较低的方式是使用 $\text{Grid Search}$ 结合时滞微分方程数值解，来确定时滞系统参数的极大似然估计 $\theta_\text{MLE}$。如果考虑精度到小数点后2位，该方式将消耗超过3天计算时间，结合疫情日更新的方式，判断不可行。
+为方便表达，我们将模型中的三个系统参数记作一个整体：$\theta = [\kappa, \mu, \tau]^T$。由于微分方程时滞系统模型一般缺乏解析解，尤其在时滞参数未确定的情况下，利用解析方式去求得系统参数估计值几乎不具备可行性[@CWB]。一种效率较低的方式是使用 $\text{Grid Search}$ 结合时滞微分方程数值解，来确定时滞系统参数的极大似然估计 $\theta_\text{MLE}$。如果考虑精度到小数点后2位，该方式将消耗超过3天计算时间，结合疫情日更新的方式，判断不可行。
 
 这里我们考虑使用平滑逼近的想法[@EST]，即使用高维平滑基函数空间，在逼近真值解的同时，同时尽可能模拟时滞系统特性。相比传统拟合方式，我们在似然函数基础上多引入一个时滞系统特性的惩罚项：
 
@@ -160,28 +160,32 @@ $$
 
 其中 $\mathcal{B}_d$ 为平滑基函数空间，我们这里选择 $\text{Bezier Spline}$ 基函数作为基函数空间；$d$为基函数空间维度，一般可以选择为拟合数据总量的一半左右；$\mathcal{C}$ 为逼近系数向量，这里可以将其视作与 $\theta$ 并列的独立参数；$\mathbb{P}(p(t)|\mathcal{B}_d(t)\mathcal{C})$ 为残差概率密度，我们这里选择高斯概率密度函数，方差权重通过正则化系数 $\lambda$ 协同控制。
 
-由于逼近系数向量 $\mathcal{C}$ 的引入，问题可以解耦为：逐步固定 $\theta$ 求得 $\mathcal{C}$ 的相对最优解 $\widehat{\mathcal{C}}$，进而利用性质：
-$$\frac{\partial \mathcal{L}}{\partial \mathcal{C}}|_{\widehat{\mathcal{C}}} \equiv 0$$
-得到：
-$$\frac{\mathrm{d}}{\mathrm{d}\theta}\frac{\partial \mathcal{L}}{\partial \mathcal{C}}|_{\widehat{\mathcal{C}}} = \frac{\partial^2\mathcal{L}}{\partial \theta \partial \mathcal{C}}|_{\widehat{\mathcal{C}}} + \frac{\partial^2\mathcal{L}}{\partial \mathcal{C}^2}|_{\widehat{\mathcal{C}}}\cdot \frac{\mathrm{d} \widehat{\mathcal{C}}}{\mathrm{d} \theta} \equiv 0$$
+由于逼近系数向量 $\mathcal{C}$ 的引入，问题可以按照如下方式进行解耦。
+
+逐步固定 $\theta$ 求得 $\mathcal{C}$ 的相对最优解 $\widehat{\mathcal{C}}$，我们有如下性质：
+$$\frac{\partial \mathcal{L}}{\partial \mathcal{C}}|_{\widehat{\mathcal{C}}} \equiv 0.$$
+利用即得到：
+$$
+\frac{\mathrm{d}}{\mathrm{d}\theta}\frac{\partial \mathcal{L}}{\partial \mathcal{C}}|_{\widehat{\mathcal{C}}} = \frac{\partial^2\mathcal{L}}{\partial \theta \partial \mathcal{C}}|_{\widehat{\mathcal{C}}} + \frac{\partial^2\mathcal{L}}{\partial \mathcal{C}^2}|_{\widehat{\mathcal{C}}}\cdot \frac{\mathrm{d} \widehat{\mathcal{C}}}{\mathrm{d} \theta} \equiv 0.
+$$
 从而我们得到了残差解耦后的优化梯度：
 $$
-\frac{\mathrm{d} \widehat{\mathcal{C}}}{\mathrm{d} \theta} = - \left \{\frac{\partial^2\mathcal{L}}{\partial \theta \partial \mathcal{C}}|_{\widehat{\mathcal{C}}}\right \}^{-1}\left \{\frac{\partial^2\mathcal{L}}{\partial \mathcal{C}^2}|_{\widehat{\mathcal{C}}}\right \}
+\frac{\mathrm{d} \widehat{\mathcal{C}}}{\mathrm{d} \theta} = - \left \{\frac{\partial^2\mathcal{L}}{\partial \theta \partial \mathcal{C}}|_{\widehat{\mathcal{C}}}\right \}^{-1}\left \{\frac{\partial^2\mathcal{L}}{\partial \mathcal{C}^2}|_{\widehat{\mathcal{C}}}\right \}.
 $$
 最后我们采用 $\text{Gauss–Newton}$ 优化法求出 $\theta$ 的局部最优解即可：
 $$
-\theta^{(s+1)} = \theta^{(s)} + \eta^{(s)} \left\{ \left(\mathcal{B}_d \frac{\mathrm{d} \widehat{\mathcal{C}}}{\mathrm{d} \theta}\right)^T\left(\mathcal{B}_d \frac{\mathrm{d} \widehat{\mathcal{C}}}{\mathrm{d} \theta}\right) \right \}^{-1}\left(\mathcal{B}_d \frac{\mathrm{d} \widehat{\mathcal{C}}}{\mathrm{d} \theta}\right)^T(y-\mathcal{B}_d\widehat{\mathcal{C}})
+\theta^{(s+1)} = \theta^{(s)} + \eta^{(s)} \left\{ \left(\mathcal{B}_d \frac{\mathrm{d} \widehat{\mathcal{C}}}{\mathrm{d} \theta}\right)^T\left(\mathcal{B}_d \frac{\mathrm{d} \widehat{\mathcal{C}}}{\mathrm{d} \theta}\right) \right \}^{-1}\left(\mathcal{B}_d \frac{\mathrm{d} \widehat{\mathcal{C}}}{\mathrm{d} \theta}\right)^T(y-\mathcal{B}_d\widehat{\mathcal{C}}).
 $$
 
 ## 误差估计与推断
 
-我们通常使用统计推断的方式为预测值估计合理的置信区间。针对上述时滞系统的拟合参数，我们可以应用 $\text{Parametric Bootstrap}$ 来进行误差估计；大致思路为，使用拟合误差作为噪声，模拟更多的真值时序，应用相同的参数拟合方式获得参数的估计值，从而获得各参数的标准差估计。我们对上海完全封控阶段的数据进行了100次模拟，获得了参数的拟合结果如下图：
+我们通常使用统计推断的方式为预测值估计合理的置信区间。针对上述时滞系统的拟合参数，我们可以应用 $\text{Parametric Bootstrap}$ 来进行误差估计；大致思路为，使用拟合误差作为噪声，模拟更多的真值时序，应用相同的参数拟合方式获得参数的估计值，从而获得各参数的标准差估计。我们对上海完全封控阶段的数据进行了100次模拟，获得了参数的拟合结果分布如下图：
 
 ```{r, echo=FALSE, out.width="60%", fig.cap="", fig.align="center"}
 knitr::include_graphics("crs.png")
 ```
 
-可以看到参数之间具备较强的相关性，拟合误差不大，基本维持在 $1e^{-2}$ 这个尺度。我们也可以利用同样的方式做预测的置信区间，得到如前所述的预测区间。
+可以看到参数之间具备较强的相关性；各个参数的误差范围不同，但基本维持在 $1e^{-2}$ 这个尺度之内。我们也可以利用同样的方式做预测的置信区间，得到如前所述的预测区间。
 
 \newpage
 
