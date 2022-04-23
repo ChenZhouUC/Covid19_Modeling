@@ -1,0 +1,13 @@
+.ipynb*
+__pycache__
+*.aux
+*.log
+*.nav
+*.out
+*.pdf
+*.snm
+*.gz
+*.toc
+*.RData
+.Rhistory
+*.csv
