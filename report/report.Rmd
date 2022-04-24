@@ -32,7 +32,7 @@ setwd("/home/chenzhou/Documents/DocX/WhaleDocs/Covid19/data")
 options(digits = 4)
 options(scipen = 0)
 
-data_sh <- read.csv("data_0422_SH.csv")
+data_sh <- read.csv("data_0423_SH.csv")
 
 data_sh$confirmed_add <- data_sh$inbound_confirmed + data_sh$outbound_confirmed
 data_sh$asymp_add <- data_sh$inbound_asymp + data_sh$outbound_asymp
@@ -54,10 +54,10 @@ colnames(asymp)  <- c("date", "add", "acc", "type")
 draw <- rbind(confirmed,asymp)
 
 begin_date <- as.Date("2022-03-01", format="%Y-%m-%d")
-term_date <- as.Date("2022-04-22", format="%Y-%m-%d")
+term_date <- as.Date("2022-04-23", format="%Y-%m-%d")
 total_trend <- ggplot() +
   geom_line(data=data_sh, aes(x=date, y=total_affected), size=1.5, alpha=.2) + geom_point(data=data_sh, aes(x=date, y=total_affected), shape=19) +
-  geom_line(data=draw, aes(x=date, y=acc, color=type), size=1, alpha=.5) + geom_point(data=draw, aes(x=date, y=acc, color=type), shape=5, size=2.0) +
+  geom_line(data=draw, aes(x=date, y=acc, color=type), size=1, alpha=.8) + geom_point(data=draw, aes(x=date, y=acc, color=type), shape=5, size=2.0) +
   scale_x_date(breaks=seq(begin_date,term_date,by="1 days"),limits=c(begin_date-1,term_date+1)) +
   scale_y_continuous(breaks=seq(0,max(data_sh$total_affected), 5e4),labels=label_number(suffix=" W",scale=1e-4)) +
   ylab("Accumulated Affected") + theme(
@@ -67,17 +67,21 @@ total_trend <- ggplot() +
     legend.box = "horizontal",
     axis.text.x=element_text(size=10, angle=90, hjust=-2, vjust=0),
     axis.title.x=element_blank()
-  ) + ggtitle("Shanghai Accumulated Covid19 Affected")
+  ) + ggtitle("Shanghai Accumulated Covid19 Affected") +
+  scale_color_manual(values=c("confirmed"="darkorange2","asymptomatic"="olivedrab3")) +
+  scale_fill_manual(values=c("confirmed"="darkorange2","asymptomatic"="olivedrab3"))
 
 total_add <- ggplot(data=draw, aes(x=date, y=add, color=type)) +
-  geom_bar(aes(fill=type),size=0.1,position="stack",stat="identity") +
+  geom_bar(aes(fill=type),size=0.1,position="stack",stat="identity",alpha=.5) +
   scale_x_date(breaks=seq(begin_date,term_date,by="1 days"),position="top",limits=c(begin_date-1,term_date+1)) +
   scale_y_reverse(breaks=seq(0, 3e4, 5e3),labels=label_number(suffix=" K",scale=1e-3),limits=c(3e4,0)) +
   ylab("Daily Added Affected") +
   theme(axis.text.x=element_blank(),
         legend.position = c(0.01, 0.01),
         legend.justification = c("left", "bottom"),
-        axis.title.x=element_blank())
+        axis.title.x=element_blank()) +
+  scale_color_manual(values=c("confirmed"="darkorange2","asymptomatic"="olivedrab3")) +
+  scale_fill_manual(values=c("confirmed"="darkorange2","asymptomatic"="olivedrab3"))
 ```
 
 
@@ -88,6 +92,20 @@ blank_lines(4)
 ```{r logo, echo=FALSE, out.width="20%", fig.cap="", fig.align="center"}
 knitr::include_graphics("logo_linear.png")
 ```
+
+
+\newpage
+
+# 免责声明
+
+1. 当您阅读本文档时，请了解本文档内容及相关预测是 Whale帷幄 对于相关事件和模型的解读，无法确保所有的分析和结论都是完整、准确的。
+
+2. 您知悉并了解本文档结论不能替代任何政府部门公告或政策。
+
+3. 本文档涉及的模型及预测方法在不同应用背景下，准确性效果可能会发生变化，本公司有权随时更改其中任何内容。
+
+4. 如果客户及第三方对本文档有其他问题，请随时与我们联系。
+
 
 \newpage
 
@@ -101,7 +119,7 @@ Whale数据科学团队实时收集了上海市卫健委官网[@SHWJW]上公布�
 grid.arrange(total_trend, total_add, ncol=1, heights=c(3,1))
 ```
 
-上图红线代表无症状感染人数累计增长趋势，蓝线代表确诊病例累计增长趋势，灰色线代表感染人数整体增长趋势。下图红条代表单日新增无症状感染人数，蓝条代表单日新增确诊病例数量。图中可见单日新增感染人数在4月13日左右到达顶峰，随后一周出现一个整体下降的趋势。由于4月22日出现一个回升点，目前总体的走势从可视化角度上并不明朗，需要进一步建模分析。
+上图绿色线代表无症状感染人数累计增长趋势，橙色线代表确诊病例累计增长趋势，灰色线代表感染人数整体增长趋势。下图绿色条代表单日新增无症状感染人数，橙色条代表单日新增确诊病例数量。图中可见单日新增感染人数在4月13日左右到达顶峰，随后一周出现一个整体下降的趋势。由于自4月22日出现一个明显的回升点，目前总体的走势从可视化角度上并不明朗，需要进一步建模分析。
 
 \newpage
 
@@ -111,12 +129,12 @@ grid.arrange(total_trend, total_add, ncol=1, heights=c(3,1))
 knitr::include_graphics("pred.png")
 ```
 
-上图展示了团队建立的疫情模型预测结果。预测模型参考的数据（红色）为3月28日实施全面封控之后至4月23日全上海感染总人数，包含无症状人员和确诊病例，并剔除了由无症状转为确诊重复计算的部分。蓝色虚线部分为预测效果，阴影为 $90\%$ 置信区间。关于建模过程和模型解读的其他细节将放在下一章着重介绍，这里先重点列出预测结论：
+上图展示了团队建立的疫情模型向未来预测2周至5月7日的结果。预测模型参考的数据（红色）为3月28日实施全面封控之后至4月23日全上海感染总人数，包含无症状人员和确诊病例，并剔除了由无症状转为确诊重复计算的部分。蓝色虚线部分为预测效果，阴影为 $90\%$ 置信区间。关于建模过程和模型解读的其他细节将放在下一章着重介绍，这里先重点列出预测结论：
 
-- 单日新增稳定下降至 $10000$ 例以下：4月27日 - 4月30日；
-- 单日新增稳定下降至 $5000$ 例以下：5月4日之后；
-- 全市范围实际感染总人数（预测至5月6日）：51万-58万；
-- 全市范围社会面清零：2周之后置信区间放大，当前模型无法精准预测。
+- 单日新增稳定下降至 $15000$ 例以下：4月30日 - 5月2日；
+- 单日新增稳定下降至 $10000$ 例以下：5月7日前后；
+- 全市范围实际感染总人数（预测至5月7日）：56万-68万；
+- 全市范围实现社会面清零：2周之后置信区间较大，当前模型无法精准预测；理性估计在5月中旬至5月底能够基本实现。
 
 **注意，以上结论均依赖于未来的数据与建模所用数据大背景相似，即上海的社会保障体系和医疗资源能够保持较高质量输出给隔离群众，且上海市全面封控在接下来的一段时间内需继续保持高效稳定的状态。除此之外，一些无法预料的突发事件可能导致疫情趋势发生突变，这些因素暂时未被模型考虑在内。**
 
@@ -144,9 +162,9 @@ knitr::include_graphics("predict.png")
 
 黄线代表3月28日上海市实施全面封控之前的模型拟合效果，吻合度极高，时滞系统参数分别为：$\kappa = 1.60, \mu = 1.17, \tau = 1.42$。意味着在全面封控执行之前，平均一个感染者一天内能够新增传染1.6个病例。隔离手段能够做到覆盖确诊病例的同时，还能多覆盖数量约为确诊病例总体17%的未确诊但已感染人群。检出时间大致为1.42天左右，也即从感染到被检出并隔离大约需要1天半。
 
-红线代表3月28日上海市实施全面封控之后的模型拟合效果，吻合度较高，时滞系统参数分别为：$\kappa = 0.67, \mu = 1.05, \tau = 2.05$。  相比全面封控之前，由于人员流动显著减少，传播指数由1.60显著下降至0.67。由于确诊病例基数增加和隔离点趋于饱和，隔离比例系数下降至1.05，但依旧达到隔离基本要求（$\mu>1.0$）。由于大规模封控可能带来的筛查上报不及时、隔离资源吃紧等多种原因，从感染到被检出并最终有效隔离大约需要2天左右。
+红线代表3月28日上海市实施全面封控之后的模型拟合效果，吻合度较高，时滞系统参数分别为：$\kappa = 0.72, \mu = 1.05, \tau = 2.18$。  相比全面封控之前，由于人员流动显著减少，传播指数由1.60显著下降至0.72。由于确诊病例基数增加和隔离点趋于饱和，隔离比例系数下降至1.05，但依旧达到隔离基本要求（$\mu>1.0$）。由于大规模封控可能带来的筛查上报不及时、隔离资源吃紧等多种原因，从感染到被检出并最终有效隔离大约需要2天左右。
 
-蓝色虚线部分代表从今日开始的总感染人数预测，由全面封控阶段（红色）模型产出。阴影部分为预测结果 $90\%$ 置信区间。从模型来看，乐观估计（下半置信区间），在4月末上海能够基本实现疫情的社会面清零；理性估计（上半置信区间），会有一定的小幅度波动将持续到5月初以及之后，从总体趋势来看能在5月底之前得到基本控制。**以上结论的大前提是未来的数据与建模所用数据大背景相似，即上海的社会保障体系和医疗资源能够保持较高质量输出给隔离群众，且上海市全面封控在接下来的一段时间内需继续保持高效稳定的状态。**
+蓝色虚线部分代表从今日开始的总感染人数预测，由全面封控阶段（红色）模型产出。阴影部分为预测结果 $90\%$ 置信区间。从模型来看，**乐观估计（下半置信区间），在5月中旬前上海能够基本实现疫情的社会面清零；理性估计（上半置信区间），会有一定的小幅度波动将持续到5月末甚至更久。以上结论的大前提是未来的数据与建模所用数据大背景相似，即上海的社会保障体系和医疗资源能够保持较高质量输出给隔离群众，且上海市全面封控在接下来的一段时间内需继续保持高效稳定的状态。**
 
 ## 时滞系统参数拟合
 
