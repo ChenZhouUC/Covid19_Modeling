@@ -188,7 +188,7 @@ $$
 $$
 从而我们得到了残差解耦后的优化梯度：
 $$
-\frac{\mathrm{d} \widehat{\mathcal{C}}}{\mathrm{d} \theta} = - \left \{\frac{\partial^2\mathcal{L}}{\partial \theta \partial \mathcal{C}}|_{\widehat{\mathcal{C}}}\right \}^{-1}\left \{\frac{\partial^2\mathcal{L}}{\partial \mathcal{C}^2}|_{\widehat{\mathcal{C}}}\right \}.
+\frac{\mathrm{d} \widehat{\mathcal{C}}}{\mathrm{d} \theta} = - \left \{\frac{\partial^2\mathcal{L}}{\partial \mathcal{C}^2}|_{\widehat{\mathcal{C}}}\right \}^{-1}\left \{\frac{\partial^2\mathcal{L}}{\partial \theta \partial \mathcal{C}}|_{\widehat{\mathcal{C}}}\right \}.
 $$
 最后我们采用 $\text{Gauss–Newton}$ 优化法求出 $\theta$ 的局部最优解即可：
 $$
