@@ -198,6 +198,7 @@ comp_bootstrap_std <- function(y_ser, bs_interp, kappa, mu, tau, lambda, interg_
     y_ser_turb <- mean_ + rnorm(length(mean_), 0, std_)
     theta <- opt_dde_theta(y_ser_turb, bs_interp, kappa, mu, tau, lambda, interg_interp, lr, decay, iters, lr_theta, iters_theta, FALSE)
     theta_mat <- rbind(theta_mat, t(matrix(theta)))
+    print(br)
   }
   return(theta_mat)
 }
@@ -267,7 +268,7 @@ clip <- function(x, vmin, vmax){
 }
 
 pred_cis <- gen_covid19_dde_cis(lock_df$pred, 10, 14, theta_mat_lockdown, data_sh$date[nrow(data_sh)],4.85, 1.0)
-pred_std <- lock_pred[length(lock_pred)] * c(0, exp(seq(-1,-1, length.out = nrow(pred_cis)-1)))
+pred_std <- lock_pred[length(lock_pred)] * c(0, exp(seq(-1,-1,length.out = nrow(pred_cis)-1)))
 pred_cis$total_add <- c(NaN,diff(pred_cis$pred))
 pred_cis$period <- "forecasted"
 pred_cis$total_affected <- NaN
@@ -290,7 +291,7 @@ base_plot <- ggplot(data=final_df, aes(x=date, y=total_affected, color=period, l
   scale_shape_manual(values=c("before lockdown"=16,"after lockdown"=16,"forecasted"=4)) +
   scale_color_manual(values=c("before lockdown"="gold3","after lockdown"="red3","forecasted"="blue3")) +
   scale_fill_manual(values=c("before lockdown"="gold3","after lockdown"="red3","forecasted"="blue3")) +
-  scale_linetype_manual(values=c("before lockdown"="solid","after lockdown" = "solid","forecasted"="dashed")) +
+  scale_linetype_manual(values=c("before lockdown"="solid","after lockdown"="solid","forecasted"="dashed")) +
   theme(
     legend.direction = "vertical",
     legend.box = "horizontal",
@@ -321,6 +322,11 @@ growth <- base_plot +
         legend.justification = c("left", "bottom"),)
 
 grid.arrange(trend, growth, ncol=1, heights=c(3,1))
+pred_df <- final_df[which(final_df$period=="forecasted"),c("date","pred","ci_min","ci_max","total_add","add_min","add_max")]
+for (r_ in 2:nrow(pred_df)) {
+  print(pred_df[r_,"ci_max"] - pred_df[r_-1,"ci_min"] - pred_df[r_,"add_max"])
+}
+write.table(pred_df[2:nrow(pred_df), ],"covid19_forecasted_0424_0507_SH_Whale.csv",row.names=FALSE,col.names=TRUE,sep=",")
 
 ######################################################################################################
 
