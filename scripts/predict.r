@@ -228,8 +228,15 @@ covid19_dde_predict <- function(ser, interp, total_len, kappa, mu, tau, sd_maxif
   # plot(fit)
   # initialization finished
   while(length(init_ser)-init_num < total_len * interp){
-    deriv_ser <- max(0, sd_maxifier * sd(fit$y - fit$yin) + err_maxifier * predict(fit, length(init_ser)-minus_steps+1)$y + kappa * (init_ser[length(init_ser)] - mu * init_ser[length(init_ser)-minus_steps]))
-    init_ser <- c(init_ser, init_ser[length(init_ser)]+deriv_ser/interp)
+    if (length(init_ser)-init_num < 14 * interp) {
+      deriv_ser <- max(0, sd_maxifier * sd(fit$y - fit$yin) + err_maxifier * predict(fit, length(init_ser)-minus_steps+1)$y + kappa * (init_ser[length(init_ser)] - mu * init_ser[length(init_ser)-minus_steps]))
+      init_ser <- c(init_ser, init_ser[length(init_ser)]+deriv_ser/interp)
+    } else {
+      mult_ <- exp((14 * interp+init_num-length(init_ser))/(total_len * interp)*5)
+      deriv_ser <- max(0, mult_ * sd_maxifier * sd(fit$y - fit$yin) + mult_ * err_maxifier * predict(fit, length(init_ser)-minus_steps+1)$y + kappa * (init_ser[length(init_ser)] - mu * init_ser[length(init_ser)-minus_steps]))
+      init_ser <- c(init_ser, init_ser[length(init_ser)]+deriv_ser/interp)
+    }
+    
   }
   return(init_ser[init_num:length(init_ser)])
 }
@@ -267,8 +274,8 @@ clip <- function(x, vmin, vmax){
   return(min(vmax,max(vmin,x)))
 }
 
-pred_cis <- gen_covid19_dde_cis(lock_df$pred, 10, 14, theta_mat_lockdown, data_sh$date[nrow(data_sh)],4.85, 1.0)
-pred_std <- lock_pred[length(lock_pred)] * c(0, exp(seq(-1,-1,length.out = nrow(pred_cis)-1)))
+pred_cis <- gen_covid19_dde_cis(lock_df$pred, 10, 28, theta_mat_lockdown, data_sh$date[nrow(data_sh)],4.85, 1.0)
+pred_std <- lock_pred[length(lock_pred)] * c(0, exp(seq(-1,-1,length.out = 14)), exp(seq(-1,-0.5,length.out = nrow(pred_cis)-15)))
 pred_cis$total_add <- c(NaN,diff(pred_cis$pred))
 pred_cis$period <- "forecasted"
 pred_cis$total_affected <- NaN
@@ -299,7 +306,7 @@ base_plot <- ggplot(data=final_df, aes(x=date, y=total_affected, color=period, l
   )
 
 start_date <- as.Date("2022-03-01", format="%Y-%m-%d")
-end_date <- as.Date("2022-05-07", format="%Y-%m-%d")
+end_date <- as.Date("2022-05-21", format="%Y-%m-%d")
 
 trend <- base_plot + geom_line(aes(y=pred), size=1, alpha=0.3) + geom_point() + 
   geom_ribbon(aes(ymin=ci_min, ymax=ci_max), linetype=3, alpha=0.2, size=0) +
@@ -322,11 +329,12 @@ growth <- base_plot +
         legend.justification = c("left", "bottom"),)
 
 grid.arrange(trend, growth, ncol=1, heights=c(3,1))
+
 pred_df <- final_df[which(final_df$period=="forecasted"),c("date","pred","ci_min","ci_max","total_add","add_min","add_max")]
 for (r_ in 2:nrow(pred_df)) {
   print(pred_df[r_,"ci_max"] - pred_df[r_-1,"ci_min"] - pred_df[r_,"add_max"])
 }
-write.table(pred_df[2:nrow(pred_df), ],"covid19_forecasted_0424_0507_SH_Whale.csv",row.names=FALSE,col.names=TRUE,sep=",")
+write.table(pred_df[2:nrow(pred_df), ],"covid19_forecasted_0424_0521_SH_Whale.csv",row.names=FALSE,col.names=TRUE,sep=",")
 
 ######################################################################################################
 
