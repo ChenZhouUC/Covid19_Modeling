@@ -2,11 +2,11 @@ library(ggplot2)
 library(fda)
 library(gridExtra)
 library(scales)
-setwd("/home/chenzhou/Documents/DocX/WhaleDocs/Covid19/data")
+setwd("/home/chenzhou/Documents/DocX/WhaleDocs/DS Related/Covid19/data")
 options(digits = 4)
 options(scipen = 0)
 
-data_sh <- read.csv("data_0423_SH.csv")
+data_sh <- read.csv("data_0516_SH.csv")
 # data_sh_whole <- data_sh[which(data_sh$map_name=='上海'), ]
 # data_sh_whole$date <- as.Date(data_sh_whole$datetime, format="%Y-%m-%d")
 # data_sh_whole$confirmed_accumulated <- data_sh_whole$confirmed_accumulated - data_sh_whole$confirmed_accumulated[1]
@@ -44,7 +44,7 @@ colnames(asymp)  <- c("date", "add", "acc", "type")
 draw <- rbind(confirmed,asymp)
 
 begin_date <- as.Date("2022-03-01", format="%Y-%m-%d")
-term_date <- as.Date("2022-04-23", format="%Y-%m-%d")
+term_date <- as.Date("2022-05-15", format="%Y-%m-%d")
 total_trend <- ggplot() +
   geom_line(data=data_sh, aes(x=date, y=total_affected), size=1.5, alpha=.2) + geom_point(data=data_sh, aes(x=date, y=total_affected), shape=19) +
   geom_line(data=draw, aes(x=date, y=acc, color=type), size=1, alpha=.5) + geom_point(data=draw, aes(x=date, y=acc, color=type), shape=5, size=2.0) +
@@ -181,8 +181,8 @@ theta <- opt_dde_theta(data_sh$total_affected[1:28], 0.5, 1.60, 1.17, 1.42, 25.,
 # show <- covid19_dde(data_sh$total_affected[1:28], 1, 10, 28, 1.6, 1.2, 1.4)
 # qplot(seq(1,28,0.1), show)
 
-opt_bs_coeff(data_sh$total_affected[28:nrow(data_sh)], 0.5, 0.72, 1.05, 2.18, 25., 500, 0.1, 0.99, 2e2, TRUE, FALSE) # 0.72, 1.05, 2.18
-theta <- opt_dde_theta(data_sh$total_affected[28:nrow(data_sh)], 0.5, 0.72, 1.05, 2.18, 25., 500, 0.1, 0.99, 2e2, 0.05, 1e2, TRUE)
+opt_bs_coeff(data_sh$total_affected[28:nrow(data_sh)], 0.5, 0.6, 1.0, 1.8, 25., 500, 0.1, 0.99, 2e2, TRUE, FALSE) # 0.60, 1.00, 1.80
+theta <- opt_dde_theta(data_sh$total_affected[28:nrow(data_sh)], 0.5, 0.6, 1.0, 1.8, 25., 500, 0.1, 0.99, 2e2, 0.05, 1e2, TRUE)
 # show <- covid19_dde(data_sh$total_affected[29:nrow(data_sh)], 1, 10, nrow(data_sh), 0.93, 1.04, 1.11)
 # qplot(seq(29,nrow(data_sh),0.1), show)
 
@@ -204,8 +204,8 @@ comp_bootstrap_std <- function(y_ser, bs_interp, kappa, mu, tau, lambda, interg_
 }
 
 
-theta_mat_prev <- comp_bootstrap_std(data_sh$total_affected[1:28], 0.5, 1.60, 1.17, 1.42, 25., 500, 0.1, 0.99, 2e2, 0.05, 2e1, 100)
-theta_mat_lockdown <- comp_bootstrap_std(data_sh$total_affected[28:nrow(data_sh)], 0.5, 0.72, 1.05, 2.18, 25., 500, 0.1, 0.99, 2e2, 0.05, 2e1, 100)
+theta_mat_prev <- comp_bootstrap_std(data_sh$total_affected[1:28], 0.5, 1.60, 1.17, 1.42, 25., 500, 0.1, 0.99, 2e2, 0.05, 1e1, 100)
+theta_mat_lockdown <- comp_bootstrap_std(data_sh$total_affected[28:nrow(data_sh)], 0.5, 0.60, 1.00, 1.80, 25., 500, 0.1, 0.99, 2e2, 0.05, 1e1, 100)
 
 ######################################################################################################
 
@@ -244,15 +244,24 @@ covid19_dde_predict <- function(ser, interp, total_len, kappa, mu, tau, sd_maxif
 gen_covid19_dde_cis <- function(ser, interp, total_len, theta_mat, end_date, sd_maxifier, err_maxifier){
   pred_cis <- matrix(nrow=0, ncol=total_len*interp+1)
   for (r in 1:nrow(theta_mat)) {
-    # pred_ser <- covid19_dde_predict(ser, interp, total_len, theta_mat[r,1], theta_mat[r,2], theta_mat[r,3], 0, err_maxifier)
-    # pred_cis <- rbind(pred_cis, t(matrix(pred_ser)))
+    pred_ser <- covid19_dde_predict(ser, interp, total_len, theta_mat[r,1], theta_mat[r,2], theta_mat[r,3], 0, err_maxifier)
+    pred_cis <- rbind(pred_cis, t(matrix(pred_ser)))
     pred_ser <- covid19_dde_predict(ser, interp, total_len, theta_mat[r,1], theta_mat[r,2], theta_mat[r,3], sd_maxifier, err_maxifier)
     pred_cis <- rbind(pred_cis, t(matrix(pred_ser)))
   }
   pred_ci_min <- apply(pred_cis,2,min)[seq(1,interp*total_len+1,interp)]
   pred_ci_max <- apply(pred_cis,2,max)[seq(1,interp*total_len+1,interp)]
-  pred_ci_avg <- apply(pred_cis,2,mean)[seq(1,interp*total_len+1,interp)]
-  return(data.frame(date=seq(end_date, end_date+total_len, 1), ci_min=pred_ci_min, ci_max=pred_ci_max, pred=(pred_ci_avg+pred_ci_min+pred_ci_max)/3.))
+  # pred_ci_avg <- apply(pred_cis,2,mean)[seq(1,interp*total_len+1,interp)]
+  # pred_ci_avg <- pred_cis[1,][seq(1,interp*total_len+1,interp)]\
+  pred_ci_avg <- numeric(0)
+  qt_ser <- seq(0.8, 0.8, length.out=ncol(pred_cis))
+  for (c in 1:ncol(pred_cis)) {
+    cand <- quantile(pred_cis[,c], c(qt_ser[c]))
+    cand <- max(cand, pred_ci_avg[length(pred_ci_avg)])
+    pred_ci_avg <- c(pred_ci_avg, cand)
+  }
+  pred_ci_avg <- pred_ci_avg[seq(1,interp*total_len+1,interp)]
+  return(data.frame(date=seq(end_date, end_date+total_len, 1), ci_min=pred_ci_min, ci_max=pred_ci_max, pred=pred_ci_avg))
 }
 
 prev_df <- data_sh[1:28,c("date", "total_add", "total_affected")]
@@ -263,7 +272,7 @@ prev_df$total_add[nrow(prev_df)] <- 0
 
 lock_df <- data_sh[28:nrow(data_sh),c("date", "total_add", "total_affected")]
 lock_df$period <- "after lockdown"
-lock_pred <- opt_bs_coeff(data_sh$total_affected[28:nrow(data_sh)], 0.5, 0.72, 1.05, 2.18, 25., 500, 0.1, 0.99, 2e2, FALSE, FALSE)
+lock_pred <- opt_bs_coeff(data_sh$total_affected[28:nrow(data_sh)], 0.5, 0.60, 1.00, 1.80, 25., 500, 0.1, 0.99, 2e2, FALSE, FALSE)
 lock_df$pred <- lock_pred[1:(length(lock_pred)-1)]
 fit_len <- 7
 lock_tail_fit <- smooth.spline(1:fit_len,seq(0,1,length.out=fit_len)*(lock_df$total_affected-lock_df$pred)[(nrow(lock_df)-fit_len+1):nrow(lock_df)],df=3)
@@ -274,7 +283,7 @@ clip <- function(x, vmin, vmax){
   return(min(vmax,max(vmin,x)))
 }
 
-pred_cis <- gen_covid19_dde_cis(lock_df$pred, 10, 28, theta_mat_lockdown, data_sh$date[nrow(data_sh)],4.85, 1.0)
+pred_cis <- gen_covid19_dde_cis(lock_df$pred, 10, 14, theta_mat_lockdown, data_sh$date[nrow(data_sh)],0.0, 0.0)
 pred_std <- lock_pred[length(lock_pred)] * c(0, exp(seq(-1,-1,length.out = 14)), exp(seq(-1,-0.5,length.out = nrow(pred_cis)-15)))
 pred_cis$total_add <- c(NaN,diff(pred_cis$pred))
 pred_cis$period <- "forecasted"
@@ -306,11 +315,11 @@ base_plot <- ggplot(data=final_df, aes(x=date, y=total_affected, color=period, l
   )
 
 start_date <- as.Date("2022-03-01", format="%Y-%m-%d")
-end_date <- as.Date("2022-05-21", format="%Y-%m-%d")
+end_date <- as.Date("2022-05-30", format="%Y-%m-%d")
 
 trend <- base_plot + geom_line(aes(y=pred), size=1, alpha=0.3) + geom_point() + 
   geom_ribbon(aes(ymin=ci_min, ymax=ci_max), linetype=3, alpha=0.2, size=0) +
-  scale_x_date(breaks=seq(start_date,end_date,by="1 days"),limits=c(start_date-1,end_date+1)) +
+  scale_x_date(breaks=seq(start_date,end_date,by="2 days"),limits=c(start_date-1,end_date+1)) +
   scale_y_continuous(breaks=seq(0, 6e5, 5e4),labels=label_number(suffix=" W",scale=1e-4)) + 
   ylab("Accumulated Confirmed Affected") +
   theme(axis.text.x=element_text(size=10, angle=90, hjust=-2, vjust=0),
@@ -320,7 +329,7 @@ trend <- base_plot + geom_line(aes(y=pred), size=1, alpha=0.3) + geom_point() +
 growth <- base_plot +  
   geom_bar(aes(y=total_add, fill=period),size=0.2,position="stack",stat="identity") +
   geom_errorbar(aes(ymin=add_min, ymax=add_max),width=.4,alpha=0.5,size=.4,linetype="solid") +
-  scale_x_date(breaks=seq(start_date,end_date,by="1 days"),position="top",limits=c(start_date-1,end_date+1)) +
+  scale_x_date(breaks=seq(start_date,end_date,by="2 days"),position="top",limits=c(start_date-1,end_date+1)) +
   scale_y_reverse(breaks=seq(0, 3e4, 5e3),labels=label_number(suffix=" K",scale=1e-3),limits=c(3e4,0)) +
   scale_alpha_manual(values=c("before lockdown"=.5,"after lockdown"=.5,"forecasted"=.2)) +
   ylab("Daily Added Confirmed") +
@@ -334,7 +343,44 @@ pred_df <- final_df[which(final_df$period=="forecasted"),c("date","pred","ci_min
 for (r_ in 2:nrow(pred_df)) {
   print(pred_df[r_,"ci_max"] - pred_df[r_-1,"ci_min"] - pred_df[r_,"add_max"])
 }
-write.table(pred_df[2:nrow(pred_df), ],"covid19_forecasted_0424_0521_SH_Whale.csv",row.names=FALSE,col.names=TRUE,sep=",")
+write.table(pred_df[2:nrow(pred_df), ],"covid19_forecasted_0517_0530_SH_Whale.csv",row.names=FALSE,col.names=TRUE,sep=",")
+
+
+######################################################################################################
+
+data_sh_prev_pred <- read.csv("covid19_forecasted_0517_0530_SH_Whale.csv")
+data_sh_prev_pred$date <- as.Date(data_sh_prev_pred$date, format="%Y-%m-%d")
+data_valid_pred <- data_sh[,c("date","total_add")]
+data_valid_pred$method <- "truth"
+data_valid_pred$add_min <- NaN
+data_valid_pred$add_max <- NaN
+
+cmpst_data <- data_valid_pred[which(data_valid_pred$date == min(data_sh_prev_pred$date)-1),"total_add"]
+data_tmp <- data_sh_prev_pred[,c("date","total_add","add_min","add_max")]
+cmpst_df <- data.frame(date = c(min(data_tmp$date)-1),total_add = c(cmpst_data),add_min = c(cmpst_data),add_max = c(cmpst_data))
+data_tmp <- rbind(cmpst_df,data_tmp)
+data_tmp$method <- "predicted"
+data_valid_pred <- rbind(data_valid_pred, data_tmp)
+ggplot(data=data_valid_pred, aes(x=date, y=total_add, color=method, linetype=method, shape=method, alpha=method, size=method)) + 
+  scale_size_manual(values=c("truth"=0.8,"predicted"=0.8)) +
+  scale_alpha_manual(values=c("truth"=0.8,"predicted"=0.8)) +
+  scale_shape_manual(values=c("truth"=16,"predicted"=4)) +
+  scale_color_manual(values=c("truth"="gold3","predicted"="blue3")) +
+  scale_fill_manual(values=c("truth"="gold3","predicted"="blue3")) +
+  scale_linetype_manual(values=c("truth"="solid","predicted"="dashed")) +
+  theme(
+    legend.direction = "vertical",
+    legend.box = "horizontal",
+    axis.title.x=element_blank(),
+  ) + 
+  geom_line(aes(y=total_add)) + geom_point(aes(y=total_add),size=1.5) +
+  geom_ribbon(aes(ymin=add_min, ymax=add_max), linetype=3, alpha=0.2, size=0) +
+  scale_x_date(breaks=seq(min(data_valid_pred$date),max(data_valid_pred$date),by="2 days")) +
+  scale_y_continuous(breaks=seq(0, 3e4, 5e3),labels=label_number(suffix=" K",scale=1e-3)) + 
+  ylab("Daily Confirmed Incremental") +
+  theme(axis.text.x=element_text(size=10, angle=90, hjust=-2, vjust=0),
+        legend.position = c(0.01, 0.99),
+        legend.justification = c("left", "top"))
 
 ######################################################################################################
 

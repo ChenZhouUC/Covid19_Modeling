@@ -5,6 +5,7 @@ __pycache__
 *.nav
 *.out
 /reports/**/*.pdf
+/reports/**/*.ppt
 *.snm
 *.gz
 *.toc
