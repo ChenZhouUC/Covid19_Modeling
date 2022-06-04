@@ -1,7 +1,7 @@
 # <img src="https://github.com/ChenZhouUC/Covid19_Modeling/blob/master/assets/logo.png" height="35" alt="logo"/> COVID-19 Trend Modeling
 
 <div align=center>
-<img src="https://github.com/ChenZhouUC/Covid19_Modeling/blob/master/assets/concept.png" alt="concept" width="600" align="center"/>
+<img src="https://github.com/ChenZhouUC/Covid19_Modeling/blob/master/assets/concept.png" alt="concept" width="800" align="center"/>
 </div>
 
 ### Introduction
