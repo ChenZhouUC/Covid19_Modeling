@@ -87,7 +87,7 @@ def bs_coeff_local_opt(
         loglik_loss_vec = (np.dot(init_coeff, bS) - ser) * loss_weights
         loglik_loss = np.linalg.norm(loglik_loss_vec, 2)
         mat_ = now_bs_partial - kappa * now_bs_integ + kappa * mu * delay_bs_integ
-        integ_loss_vec = np.dot(init_coeff, mat_ * loss_weights_shift)
+        integ_loss_vec = np.dot(init_coeff, mat_ * loss_weights_shift).astype(np.float)
         integ_loss = (
             np.linalg.norm(integ_loss_vec, 2) / np.sqrt(interg_interp_prop) * labd
         )
@@ -105,11 +105,11 @@ def bs_coeff_local_opt(
             continuous_remain = 0
 
         # gradient descent
-        loglik_part = np.dot(bS * loss_weights, loglik_loss_vec)
+        loglik_part = np.dot(bS * loss_weights, loglik_loss_vec).astype(np.float)
         integ_part = (
             np.dot(
-                mat_ * loss_weights_shift, np.dot(init_coeff, mat_ * loss_weights_shift)
-            )
+                mat_ * loss_weights_shift, np.dot(init_coeff, mat_ * loss_weights_shift).astype(np.float)
+            ).astype(np.float)
             / interg_interp_prop
             * labd**2
         )
@@ -131,19 +131,19 @@ def bs_coeff_local_opt(
                 ]
             )
 
-    coef_mat = np.dot(bS, bS.T) + np.dot(mat_, mat_.T) / interg_interp_prop * labd**2
+    coef_mat = np.dot(bS, bS.T).astype(np.float) + np.dot(mat_, mat_.T) / interg_interp_prop * labd**2
     k_mat = np.dot(
         np.dot(
             now_bs_integ - mu * delay_bs_integ,
             (now_bs_integ - mu * delay_bs_integ - now_bs_partial).T,
-        ),
+        ).astype(np.float),
         init_coeff,
-    )
+    ).astype(np.float)
     m_mat = np.dot(
         (mu * kappa**2) * np.dot(delay_bs_integ, delay_bs_integ.T)
         + kappa * np.dot(delay_bs_integ, (now_bs_partial - kappa * now_bs_integ).T),
         init_coeff,
-    )
+    ).astype(np.float)
     t_mat = -np.dot(
         (
             2
@@ -159,9 +159,9 @@ def bs_coeff_local_opt(
             ** 2
         ),
         init_coeff,
-    )
+    ).astype(np.float)
     partial_resid_theta = (
-        np.dot(np.dot(bS.T, np.linalg.inv(coef_mat)), np.array([k_mat, m_mat, t_mat]).T)
+        np.dot(np.dot(bS.T, np.linalg.inv(coef_mat)).astype(np.float), np.array([k_mat, m_mat, t_mat]).T)
         * 2
         * labd**2
         / interg_interp_prop
@@ -172,10 +172,10 @@ def bs_coeff_local_opt(
                 np.dot(partial_resid_theta.T, partial_resid_theta).astype(np.float)
             ),
             partial_resid_theta.T,
-        ),
+        ).astype(np.float),
         ser - np.dot(bS.T, init_coeff),
-    )
-    fitted_ser = np.dot(bS.T, init_coeff)
+    ).astype(np.float)
+    fitted_ser = np.dot(bS.T, init_coeff).astype(np.float)
     if show_process:
         f, axes = plt.subplots(1, 2, figsize=(12, 4))
         sns.scatterplot(x=x, y=ser, alpha=1.0, color="blue", s=15, ax=axes[0])
@@ -260,10 +260,7 @@ def model_theta_global_opt(
             theta_selected = theta.copy()
             fitted_ser_selected = fitted_ser.copy()
 
-        theta[0] -= lr_theta * theta_grad[0]
-        theta[1] -= lr_theta * theta_grad[1]
-        theta[2] -= lr_theta * theta_grad[2]
-
+        theta -= lr_theta * theta_grad
         lr_theta = lr_theta * decay_theta
         losses.append(loss_)
         if show_process_theta:
