@@ -1,0 +1,50 @@
+[tool.poetry]
+name = "covid19-modeling"
+version = "0.1.0"
+description = ""
+authors = ["ChenZhouUC <chenzhou@uchicago.edu>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pip = "22.3.1"
+pyclean = "^2.2.0"
+numpy = "^1.23.3"
+pandas = "^1.5.0"
+scikit-learn = "^1.1.3"
+statsmodels = "^0.13.5"
+seaborn = "^0.12.0"
+ffmpeg-python = "^0.2.0"
+ffmpeg = "^1.4"
+jupyterlab = "^3.5.0"
+nodejs = "^0.1.1"
+jupyterlab-pygments = "^0.2.2"
+jupyterlab-latex = "^3.1.0"
+jupyterlab-code-formatter = "^1.5.3"
+jupyterlab-execute-time = "^2.3.0"
+jupyterlab-system-monitor = "^0.8.0"
+jupyterlab-git = "^0.39.3"
+black = "^22.10.0"
+isort = "^5.10.1"
+xeus-python = "^0.14.3"
+
+[tool.poetry.dev-dependencies]
+poethepoet = "^0.10.0"
+
+[tool.poe.tasks]
+st_jlab = { shell = "jupyter lab --ServerApp.ResourceUseDisplay.mem_limit=$((16*1024*1024*1024)) --ServerApp.ResourceUseDisplay.track_cpu_percent=True --ServerApp.ResourceUseDisplay.cpu_limit=$((6))" }
+rb_jlab = "jupyter lab build"
+ls_jlab = "jupyter labextension list"
+enable_servext = "jupyter server extension enable --py jupyterlab_latex jupyterlab_code_formatter jupyter_resource_usage"
+list_servext = "jupyter server extension list"
+install_labskin = "jupyter labextension install @arbennett/base16-mexico-light --no-build"
+install_varinsp = "python -m pip install lckr-jupyterlab-variableinspector -i http://mirrors.aliyun.com/pypi/simple/  --trusted-host mirrors.aliyun.com"
+install_torch = "python -m pip install torch torchvision -i http://mirrors.aliyun.com/pypi/simple/  --trusted-host mirrors.aliyun.com"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[[tool.poetry.source]]
+name = "aliyun"
+url = "https://mirrors.aliyun.com/pypi/simple/"
+default = true
