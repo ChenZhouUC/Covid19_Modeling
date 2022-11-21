@@ -9,6 +9,4 @@ __pycache__
 *.snm
 *.gz
 *.toc
-*.RData
 .Rhistory
-*.csv
