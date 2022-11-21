@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from skfda.representation.basis import BSpline
+from copy import deepcopy
 
 pd.set_option("display.max_rows", 500)
 pd.set_option("display.max_columns", 500)
@@ -23,11 +24,15 @@ sns.set(
 
 def revise_ser(ser, intercept=None):
     ser = np.array(ser)
-    revised_zero = np.clip(
-        np.concatenate([[0], (ser[1:] - ser[:-1])]), 0, np.inf
-    ).cumsum()
+    revised_zero_diff = np.clip(
+        np.concatenate([[1], (ser[1:] - ser[:-1])]), 0, np.inf
+    )
+    check_zeros = (revised_zero_diff.cumprod() != 0)
+    revised_zero = (revised_zero_diff * check_zeros).cumsum()
     if intercept is None:
         intercept = ser.mean() - revised_zero.mean()
+    else:
+        intercept = intercept - 1
     return revised_zero + intercept
 
 def bs_coeff_local_opt(
@@ -195,7 +200,7 @@ def bs_coeff_local_opt(
         )
         ax2 = ax.twinx()
         sns.lineplot(data=loss_df, x="iter", y="integ_loss", color="red", ax=ax2)
-    return theta_grad, loss_, fitted_ser
+    return theta_grad, loss_, fitted_ser, (init_coeff, bs_func)
 
 def model_theta_global_opt(
     ser,
@@ -229,7 +234,7 @@ def model_theta_global_opt(
 
     continuous_remain = 0
     for iter_theta_ in range(iters_theta):
-        theta_grad, loss_, fitted_ser = bs_coeff_local_opt(
+        theta_grad, loss_, fitted_ser, bs_funcs = bs_coeff_local_opt(
             ser,
             theta[0],
             theta[1],
@@ -259,6 +264,7 @@ def model_theta_global_opt(
         if min(losses) > loss_:
             theta_selected = theta.copy()
             fitted_ser_selected = fitted_ser.copy()
+            bs_funcs_selected = deepcopy(bs_funcs)
 
         theta -= lr_theta * theta_grad
         lr_theta = lr_theta * decay_theta
@@ -269,4 +275,4 @@ def model_theta_global_opt(
         plt.figure(figsize=(12, 6))
         ax = sns.lineplot(x=range(len(losses)), y=losses)
         ax = sns.scatterplot(x=range(len(losses)), y=losses)
-    return theta_selected, losses, fitted_ser_selected
+    return theta_selected, losses, fitted_ser_selected, bs_funcs_selected
