@@ -2,7 +2,7 @@ library(ggplot2)
 library(fda)
 library(gridExtra)
 library(scales)
-setwd("/home/chenzhou/Documents/DocX/WhaleDocs/DS Related/Covid19/data")
+setwd("/Users/chenzhou/Documents/Everything/python/COVID19/data/")
 options(digits = 4)
 options(scipen = 0)
 
