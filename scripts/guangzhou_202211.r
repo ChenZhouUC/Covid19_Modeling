@@ -41,7 +41,10 @@ total_trend <- ggplot() +
 
 total_add <- ggplot(data = draw, aes(x = date, y = add, color = type)) +
   geom_bar(aes(fill = type), size = 0.1, position = "stack", stat = "identity") +
-  scale_x_date(breaks = seq(begin_date, term_date, by = "1 days"), position = "top", limits = c(begin_date - 1, term_date + 1)) +
+  scale_x_date(
+    breaks = seq(begin_date, term_date, by = "1 days"), position = "top",
+    limits = c(begin_date - 1, term_date + 1)
+  ) +
   scale_y_reverse(breaks = seq(0, 3e4, 5e3), labels = label_number(suffix = " K", scale = 1e-3), limits = c(3e4, 0)) +
   ylab("Daily Added Affected") +
   theme(
