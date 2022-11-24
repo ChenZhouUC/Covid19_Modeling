@@ -276,3 +276,119 @@ def model_theta_global_opt(
         ax = sns.lineplot(x=range(len(losses)), y=losses)
         ax = sns.scatterplot(x=range(len(losses)), y=losses)
     return theta_selected, losses, fitted_ser_selected, bs_funcs_selected
+
+
+def next_pred(ser_for_now, pred_interp, theta):
+    kappa, mu, tau = theta
+    delta_t = 1 / pred_interp
+    tau_shift_floor = int(tau * pred_interp)
+    tau_shift_float = tau * pred_interp - tau_shift_floor
+    ser_tau = (
+        tau_shift_float * ser_for_now[-(tau_shift_floor + 2)]
+        + (1 - tau_shift_float) * ser_for_now[-(tau_shift_floor + 1)]
+    )
+    return ser_for_now[-2] + np.clip(
+        2 * delta_t * kappa * (ser_for_now[-1] - mu * ser_tau), 0, np.inf
+    )
+
+
+def pred_ser(ser, pred_length, pred_interp, pred_prev_len, theta):
+    pred_prepare = np.array([ser[-1]])
+    for _i in range(pred_prev_len):
+        pred_prepare_append = np.linspace(
+            ser[-2 - _i], ser[-1 - _i], pred_interp, endpoint=False
+        )
+        pred_prepare = np.concatenate([pred_prepare_append, pred_prepare])
+    for _i in range(pred_length * pred_interp):
+        next_tic = next_pred(pred_prepare, pred_interp, theta)
+        pred_prepare = np.append(pred_prepare, next_tic)
+    return pred_prepare
+
+def detect_explosion_point(ser, top=1, daily_add_thresh=20):
+    ser_diff = ser[1:] - ser[:-1]
+    thresh_explosion = np.argmax(ser_diff >= daily_add_thresh) + 1
+    return (1 + np.argsort((ser[2:] + ser[:-2]) - 2 * ser[1:-1])[::-1])[:top], thresh_explosion
+
+def growth_decision(fitted_ser, theta_opt):
+    return (theta_opt.prod() - 1) * (fitted_ser[-1] - fitted_ser[-2]) >= theta_opt[
+        0
+    ] * (theta_opt[1] - 1) * fitted_ser[-1]
+
+
+def covid19_seer(cumulative_affected, seer_type, theta_city, five_day_filter=25, lock_down_hard_thresh=200):
+    assert seer_type in [
+        "WARNING",
+        "LOCKDOWN",
+    ], "seer_type should be in [WARNING,LOCKDOWN]!!!"
+    
+    if seer_type == "WARNING":
+        last_five_day = cumulative_affected[-5:]
+        if (last_five_day[-1] - last_five_day[0]) / len(last_five_day) <= five_day_filter / 5:
+            return False, None, None, None
+
+    kappa_init, mu_init, tau_init = theta_city
+    theta_opt, losses, fitted_opt, bs_funcs = model_theta_global_opt(
+        cumulative_affected,
+        kappa_init=kappa_init,
+        mu_init=mu_init,
+        tau_init=tau_init,
+        bs_interp_prop=0.5,
+        interg_interp_prop=200.0,
+        labd=5.0,
+        bs_lr_schedule=(int(5e2), 0.02, 0.999),
+        theta_lr_schedule=(int(5e2), 0.05, 0.99),
+        early_stop_ratio=[1.5, 0.999],
+        early_stop_steps=10,
+        show_process="neither",
+        ser_loss_expansion=0.5,
+    )
+    print("fitted theta: {}".format(theta_opt))
+    kappa_fit, mu_fit, tau_fit = theta_opt
+    fitted_ser = revise_ser(fitted_opt)
+
+    if growth_decision(fitted_ser, theta_opt):
+        growth_flag = True
+        theta_selection = theta_city
+    else:
+        growth_flag = False
+        theta_selection = (theta_opt + theta_city) / 2.0
+
+    if seer_type == "WARNING":
+        pred_interp = 10
+        pred_len = 30
+        pred_prev_len = int(np.ceil(tau_fit))
+
+        pred_ser_combo = pred_ser(
+            cumulative_affected, pred_len, pred_interp, pred_prev_len, theta_opt
+        )
+        pred_series = pred_ser_combo[pred_interp * pred_prev_len :][::pred_interp]
+        pred_series = revise_ser(pred_series, intercept=pred_series[0])
+        whole_ser = np.concatenate([cumulative_affected, pred_series[1:]])
+        
+        cc_selection, thresh_selection = detect_explosion_point(whole_ser, 1)
+        turning_point = max(min(cc_selection[0], thresh_selection), len(cumulative_affected))
+        before_lockdown = whole_ser[: (turning_point + 1)]
+        before_lockdown = before_lockdown[before_lockdown <= lock_down_hard_thresh]
+        turning_point = min(turning_point, len(before_lockdown) - 1)
+    else:
+        turning_point = None
+        before_lockdown = cumulative_affected
+    print(turning_point)
+    pred_interp = 10
+    pred_len = 60
+    pred_prev_len = int(np.ceil(tau_fit))
+
+    pred_ser_combo = pred_ser(
+        before_lockdown, pred_len, pred_interp, pred_prev_len, theta_selection
+    )
+    pred_series = pred_ser_combo[pred_interp * pred_prev_len :][::pred_interp]
+    pred_series = revise_ser(pred_series, intercept=pred_series[0])
+    whole_ser = np.concatenate([before_lockdown, pred_series[1:]])
+    stop_point = (pred_series[1:] - pred_series[:-1]).argmin() + len(before_lockdown)
+
+    return (
+        growth_flag,
+        turning_point,
+        stop_point,
+        whole_ser,
+    )
