@@ -1,4 +1,4 @@
-library(ggplot2) 
+library(ggplot2)
 library(fda)
 library(gridExtra)
 library(scales)
@@ -12,10 +12,10 @@ data_sh <- read.csv("data_0516_SH.csv")
 # data_sh_whole$confirmed_accumulated <- data_sh_whole$confirmed_accumulated - data_sh_whole$confirmed_accumulated[1]
 # data_sh_whole$asymptomatic_accumulated <- data_sh_whole$asymptomatic_accumulated - data_sh_whole$asymptomatic_accumulated[1]
 
-linear_fix <- function(df, colname){
-  for (i in 2:(nrow(df)-1)) {
-    if (df[i, colname] == df[i-1, colname]) {
-      df[i, colname] <- (df[i-1, colname] + df[i+1, colname])/2
+linear_fix <- function(df, colname) {
+  for (i in 2:(nrow(df) - 1)) {
+    if (df[i, colname] == df[i - 1, colname]) {
+      df[i, colname] <- (df[i - 1, colname] + df[i + 1, colname]) / 2
     }
   }
   return(df)
@@ -32,61 +32,67 @@ data_sh$confirmed_acc <- cumsum(data_sh$confirmed_add) - 380
 data_sh$asymp_acc <- cumsum(data_sh$asymp_add) - 120
 data_sh$total_affected <- data_sh$confirmed_acc + data_sh$asymp_acc
 
-data_sh$date <- as.Date(data_sh$date, format="%Y-%m-%d")
-data_sh <- data_sh[which(data_sh$date >= "2022-03-01"),]
+data_sh$date <- as.Date(data_sh$date, format = "%Y-%m-%d")
+data_sh <- data_sh[which(data_sh$date >= "2022-03-01"), ]
 
-confirmed <- data_sh[,c("date","confirmed_add","confirmed_acc")]
+confirmed <- data_sh[, c("date", "confirmed_add", "confirmed_acc")]
 confirmed$type <- "confirmed"
-colnames(confirmed)  <- c("date", "add", "acc", "type")
-asymp <- data_sh[,c("date","asymp_add", "asymp_acc")]
+colnames(confirmed) <- c("date", "add", "acc", "type")
+asymp <- data_sh[, c("date", "asymp_add", "asymp_acc")]
 asymp$type <- "asymptomatic"
-colnames(asymp)  <- c("date", "add", "acc", "type")
-draw <- rbind(confirmed,asymp)
+colnames(asymp) <- c("date", "add", "acc", "type")
+draw <- rbind(confirmed, asymp)
 
-begin_date <- as.Date("2022-03-01", format="%Y-%m-%d")
-term_date <- as.Date("2022-05-15", format="%Y-%m-%d")
+begin_date <- as.Date("2022-03-01", format = "%Y-%m-%d")
+term_date <- as.Date("2022-05-15", format = "%Y-%m-%d")
 total_trend <- ggplot() +
-  geom_line(data=data_sh, aes(x=date, y=total_affected), size=1.5, alpha=.2) + geom_point(data=data_sh, aes(x=date, y=total_affected), shape=19) +
-  geom_line(data=draw, aes(x=date, y=acc, color=type), size=1, alpha=.5) + geom_point(data=draw, aes(x=date, y=acc, color=type), shape=5, size=2.0) +
-  scale_x_date(breaks=seq(begin_date,term_date,by="1 days"),limits=c(begin_date-1,term_date+1)) +
-  scale_y_continuous(breaks=seq(0,max(data_sh$total_affected), 5e4)) +
-  ylab("Accumulated Affected") + theme(
+  geom_line(data = data_sh, aes(x = date, y = total_affected), size = 1.5, alpha = .2) +
+  geom_point(data = data_sh, aes(x = date, y = total_affected), shape = 19) +
+  geom_line(data = draw, aes(x = date, y = acc, color = type), size = 1, alpha = .5) +
+  geom_point(data = draw, aes(x = date, y = acc, color = type), shape = 5, size = 2.0) +
+  scale_x_date(breaks = seq(begin_date, term_date, by = "1 days"), limits = c(begin_date - 1, term_date + 1)) +
+  scale_y_continuous(breaks = seq(0, max(data_sh$total_affected), 5e4)) +
+  ylab("Accumulated Affected") +
+  theme(
     legend.position = c(0.01, 0.99),
     legend.justification = c("left", "top"),
     legend.direction = "vertical",
     legend.box = "horizontal",
-    axis.text.x=element_text(size=10, angle=90, hjust=-2, vjust=0),
-    axis.title.x=element_blank()
-  ) + ggtitle("Shanghai Accumulated Covid19 Affected")
+    axis.text.x = element_text(size = 10, angle = 90, hjust = -2, vjust = 0),
+    axis.title.x = element_blank()
+  ) +
+  ggtitle("Shanghai Accumulated Covid19 Affected")
 
-total_add <- ggplot(data=draw, aes(x=date, y=add, color=type)) +
-  geom_bar(aes(fill=type),size=0.1,position="stack",stat="identity") +
-  scale_x_date(breaks=seq(begin_date,term_date,by="1 days"),position="top",limits=c(begin_date-1,term_date+1)) +
-  scale_y_reverse(breaks=seq(0, 3e4, 5e3),labels=label_number(suffix=" K",scale=1e-3),limits=c(3e4,0)) +
+total_add <- ggplot(data = draw, aes(x = date, y = add, color = type)) +
+  geom_bar(aes(fill = type), size = 0.1, position = "stack", stat = "identity") +
+  scale_x_date(breaks = seq(begin_date, term_date, by = "1 days"), position = "top", limits = c(begin_date - 1, term_date + 1)) +
+  scale_y_reverse(breaks = seq(0, 3e4, 5e3), labels = label_number(suffix = " K", scale = 1e-3), limits = c(3e4, 0)) +
   ylab("Daily Added Affected") +
-  theme(axis.text.x=element_blank(),
-        legend.position = c(0.01, 0.01),
-        legend.justification = c("left", "bottom"),
-        axis.title.x=element_blank())
+  theme(
+    axis.text.x = element_blank(),
+    legend.position = c(0.01, 0.01),
+    legend.justification = c("left", "bottom"),
+    axis.title.x = element_blank()
+  )
 
-grid.arrange(total_trend, total_add, ncol=1, heights=c(3,1))
+grid.arrange(total_trend, total_add, ncol = 1, heights = c(3, 1))
 
 ######################################################################################################
 
-covid19_dde <- function(ser, ser_interp, interp, total_len, kappa, mu, tau){
+covid19_dde <- function(ser, ser_interp, interp, total_len, kappa, mu, tau) {
   # initialization
   init_num <- ceiling(tau * interp) + 1
   new_ser <- numeric(0)
   for (n in 1:init_num) {
-    new_val_index <- (n-1) / interp * ser_interp
+    new_val_index <- (n - 1) / interp * ser_interp
     l_ratio <- new_val_index - floor(new_val_index)
-    new_val <- ser[floor(new_val_index)+1] * (1-l_ratio) + ser[floor(new_val_index)+2] * l_ratio
+    new_val <- ser[floor(new_val_index) + 1] * (1 - l_ratio) + ser[floor(new_val_index) + 2] * l_ratio
     new_ser <- c(new_ser, new_val)
   }
   # initialization finished
-  while(length(new_ser) <= (total_len-1) * interp){
-    deriv_ser <- max(0, kappa * (new_ser[length(new_ser)] - mu * new_ser[round(length(new_ser)-tau*interp)]))
-    new_ser <- c(new_ser, new_ser[length(new_ser)]+deriv_ser/interp)
+  while (length(new_ser) <= (total_len - 1) * interp) {
+    deriv_ser <- max(0, kappa * (new_ser[length(new_ser)] - mu * new_ser[round(length(new_ser) - tau * interp)]))
+    new_ser <- c(new_ser, new_ser[length(new_ser)] + deriv_ser / interp)
   }
   return(new_ser)
 }
@@ -96,26 +102,26 @@ covid19_dde <- function(ser, ser_interp, interp, total_len, kappa, mu, tau){
 
 ######################################################################################################
 
-opt_bs_coeff <- function(y_ser, bs_interp, kappa, mu, tau, lambda, interg_interp, lr, decay, iters, show_process, iter_opt){
+opt_bs_coeff <- function(y_ser, bs_interp, kappa, mu, tau, lambda, interg_interp, lr, decay, iters, show_process, iter_opt) {
   # log likelihood part
-  bs_domain <- seq(0, length(y_ser)-1, 1)
-  knots <- seq(0, length(y_ser)-1, length.out=round(bs_interp*(length(y_ser)-1)+1))
-  bS <- bsplineS(x=bs_domain,breaks=knots,norder=4,nderiv=0,returnMatrix=FALSE)
+  bs_domain <- seq(0, length(y_ser) - 1, 1)
+  knots <- seq(0, length(y_ser) - 1, length.out = round(bs_interp * (length(y_ser) - 1) + 1))
+  bS <- bsplineS(x = bs_domain, breaks = knots, norder = 4, nderiv = 0, returnMatrix = FALSE)
   n_coeff <- ncol(bS)
-  init_coeff <- rep(0,n_coeff)
-  init_grad <- rep(0,n_coeff)
-  
+  init_coeff <- rep(0, n_coeff)
+  init_grad <- rep(0, n_coeff)
+
   # differential integration part
-  integ_x <- seq(0, length(y_ser)-1, length.out=interg_interp*(length(y_ser)-1)+1)
-  bs_integ <- bsplineS(x=integ_x,breaks=knots,norder=4,nderiv=0,returnMatrix=FALSE)
-  bs_partial <- bsplineS(x=integ_x,breaks=knots,norder=4,nderiv=1,returnMatrix=FALSE)
+  integ_x <- seq(0, length(y_ser) - 1, length.out = interg_interp * (length(y_ser) - 1) + 1)
+  bs_integ <- bsplineS(x = integ_x, breaks = knots, norder = 4, nderiv = 0, returnMatrix = FALSE)
+  bs_partial <- bsplineS(x = integ_x, breaks = knots, norder = 4, nderiv = 1, returnMatrix = FALSE)
   shift_ <- round(tau * interg_interp)
-  now_bs_integ <- bs_integ[(1+shift_):nrow(bs_integ),]
-  delay_bs_integ <- bs_integ[1:(nrow(bs_integ)-shift_),]
-  now_bs_partial <- bs_partial[(1+shift_):nrow(bs_partial),]
-  delay_bs_partial <- bs_partial[1:(nrow(bs_integ)-shift_),]
+  now_bs_integ <- bs_integ[(1 + shift_):nrow(bs_integ), ]
+  delay_bs_integ <- bs_integ[1:(nrow(bs_integ) - shift_), ]
+  now_bs_partial <- bs_partial[(1 + shift_):nrow(bs_partial), ]
+  delay_bs_partial <- bs_partial[1:(nrow(bs_integ) - shift_), ]
   # loss_ser <- numeric(0)
-  for (i_ in 1:iters){
+  for (i_ in 1:iters) {
     # loss calculation part
     loglik_loss_vec <- bS %*% init_coeff - y_ser
     loglik_loss <- sqrt(t(loglik_loss_vec) %*% loglik_loss_vec)
@@ -134,14 +140,14 @@ opt_bs_coeff <- function(y_ser, bs_interp, kappa, mu, tau, lambda, interg_interp
   coef_mat <- t(bS) %*% bS + t(mat_) %*% mat_ / interg_interp * lambda
   k_mat <- t(now_bs_integ - mu * delay_bs_integ) %*% (now_bs_integ - mu * delay_bs_integ - now_bs_partial) %*% init_coeff
   m_mat <- ((mu * kappa**2) * (t(delay_bs_integ) %*% delay_bs_integ) + kappa * t(delay_bs_integ) %*% (now_bs_partial - kappa * now_bs_integ)) %*% init_coeff
-  t_mat <- -(2*kappa*mu * (t(now_bs_partial-kappa*now_bs_integ+kappa*mu*delay_bs_integ) %*% delay_bs_partial) + 
-               (now_bs_partial-kappa*now_bs_integ+kappa*mu*delay_bs_integ)[1,]**2) %*% init_coeff
-  partial_resid_theta <- bS %*% solve(coef_mat) %*% cbind(k_mat,m_mat,t_mat)*2*lambda/interg_interp
+  t_mat <- -(2 * kappa * mu * (t(now_bs_partial - kappa * now_bs_integ + kappa * mu * delay_bs_integ) %*% delay_bs_partial) +
+    (now_bs_partial - kappa * now_bs_integ + kappa * mu * delay_bs_integ)[1, ]**2) %*% init_coeff
+  partial_resid_theta <- bS %*% solve(coef_mat) %*% cbind(k_mat, m_mat, t_mat) * 2 * lambda / interg_interp
   theta_grad <- solve(t(partial_resid_theta) %*% partial_resid_theta) %*% t(partial_resid_theta) %*% (y_ser - bS %*% init_coeff)
   if (show_process) {
     print(c(loss_, loglik_loss, integ_loss))
-    print(bS[1,] %*% init_coeff)
-    plot(0:(length(y_ser)-1), y_ser, cex=0.5,)
+    print(bS[1, ] %*% init_coeff)
+    plot(0:(length(y_ser) - 1), y_ser, cex = 0.5, )
     lines(integ_x, bs_integ %*% init_coeff)
     Sys.sleep(1)
   }
@@ -152,7 +158,7 @@ opt_bs_coeff <- function(y_ser, bs_interp, kappa, mu, tau, lambda, interg_interp
   }
 }
 
-opt_dde_theta <- function(y_ser, bs_interp, kappa_init, mu_init, tau_init, lambda, interg_interp, lr, decay, iters, lr_theta, iters_theta, show_process){
+opt_dde_theta <- function(y_ser, bs_interp, kappa_init, mu_init, tau_init, lambda, interg_interp, lr, decay, iters, lr_theta, iters_theta, show_process) {
   losses <- c(Inf)
   theta <- c(kappa_init, mu_init, tau_init)
   for (i in 1:iters_theta) {
@@ -189,10 +195,10 @@ theta <- opt_dde_theta(data_sh$total_affected[28:nrow(data_sh)], 0.5, 0.6, 1.0, 
 ######################################################################################################
 
 
-comp_bootstrap_std <- function(y_ser, bs_interp, kappa, mu, tau, lambda, interg_interp, lr, decay, iters, lr_theta, iters_theta, bootstrap_round){
+comp_bootstrap_std <- function(y_ser, bs_interp, kappa, mu, tau, lambda, interg_interp, lr, decay, iters, lr_theta, iters_theta, bootstrap_round) {
   rst <- opt_bs_coeff(y_ser, bs_interp, kappa, mu, tau, lambda, interg_interp, lr, decay, iters, FALSE, FALSE)
   std_ <- rst[length(rst)]
-  mean_ <- rst[1:(length(rst)-1)]
+  mean_ <- rst[1:(length(rst) - 1)]
   theta_mat <- t(matrix(c(kappa, mu, tau)))
   for (br in 1:bootstrap_round) {
     y_ser_turb <- mean_ + rnorm(length(mean_), 0, std_)
@@ -209,89 +215,88 @@ theta_mat_lockdown <- comp_bootstrap_std(data_sh$total_affected[28:nrow(data_sh)
 
 ######################################################################################################
 
-covid19_dde_predict <- function(ser, interp, total_len, kappa, mu, tau, sd_maxifier, err_maxifier){
+covid19_dde_predict <- function(ser, interp, total_len, kappa, mu, tau, sd_maxifier, err_maxifier) {
   # initialization
   init_num <- floor((length(ser) - 1) * interp)
   init_ser <- c(ser[length(ser)])
-  for (n in 1:(init_num-1)) {
+  for (n in 1:(init_num - 1)) {
     tail_left_index <- length(ser) - n / interp
     l_ratio <- tail_left_index - floor(tail_left_index)
-    inter_val <- ser[floor(tail_left_index)] * (1-l_ratio) + ser[ceiling(tail_left_index)] * l_ratio
+    inter_val <- ser[floor(tail_left_index)] * (1 - l_ratio) + ser[ceiling(tail_left_index)] * l_ratio
     init_ser <- c(inter_val, init_ser)
   }
-  minus_steps <- round(tau*interp)
+  minus_steps <- round(tau * interp)
   lift_bias <- numeric(0)
   for (j in 1:(init_num - minus_steps)) {
-    lift_bias <- c(lift_bias, (init_ser[j+minus_steps]-init_ser[j+minus_steps-1])*interp - kappa * (init_ser[j+minus_steps] - mu * init_ser[j]))
+    lift_bias <- c(lift_bias, (init_ser[j + minus_steps] - init_ser[j + minus_steps - 1]) * interp - kappa * (init_ser[j + minus_steps] - mu * init_ser[j]))
   }
-  fit <- smooth.spline(1:length(lift_bias),lift_bias,df=3)
+  fit <- smooth.spline(1:length(lift_bias), lift_bias, df = 3)
   # plot(fit)
   # initialization finished
-  while(length(init_ser)-init_num < total_len * interp){
-    if (length(init_ser)-init_num < 14 * interp) {
-      deriv_ser <- max(0, sd_maxifier * sd(fit$y - fit$yin) + err_maxifier * predict(fit, length(init_ser)-minus_steps+1)$y + kappa * (init_ser[length(init_ser)] - mu * init_ser[length(init_ser)-minus_steps]))
-      init_ser <- c(init_ser, init_ser[length(init_ser)]+deriv_ser/interp)
+  while (length(init_ser) - init_num < total_len * interp) {
+    if (length(init_ser) - init_num < 14 * interp) {
+      deriv_ser <- max(0, sd_maxifier * sd(fit$y - fit$yin) + err_maxifier * predict(fit, length(init_ser) - minus_steps + 1)$y + kappa * (init_ser[length(init_ser)] - mu * init_ser[length(init_ser) - minus_steps]))
+      init_ser <- c(init_ser, init_ser[length(init_ser)] + deriv_ser / interp)
     } else {
-      mult_ <- exp((14 * interp+init_num-length(init_ser))/(total_len * interp)*5)
-      deriv_ser <- max(0, mult_ * sd_maxifier * sd(fit$y - fit$yin) + mult_ * err_maxifier * predict(fit, length(init_ser)-minus_steps+1)$y + kappa * (init_ser[length(init_ser)] - mu * init_ser[length(init_ser)-minus_steps]))
-      init_ser <- c(init_ser, init_ser[length(init_ser)]+deriv_ser/interp)
+      mult_ <- exp((14 * interp + init_num - length(init_ser)) / (total_len * interp) * 5)
+      deriv_ser <- max(0, mult_ * sd_maxifier * sd(fit$y - fit$yin) + mult_ * err_maxifier * predict(fit, length(init_ser) - minus_steps + 1)$y + kappa * (init_ser[length(init_ser)] - mu * init_ser[length(init_ser) - minus_steps]))
+      init_ser <- c(init_ser, init_ser[length(init_ser)] + deriv_ser / interp)
     }
-    
   }
   return(init_ser[init_num:length(init_ser)])
 }
 
-gen_covid19_dde_cis <- function(ser, interp, total_len, theta_mat, end_date, sd_maxifier, err_maxifier){
-  pred_cis <- matrix(nrow=0, ncol=total_len*interp+1)
+gen_covid19_dde_cis <- function(ser, interp, total_len, theta_mat, end_date, sd_maxifier, err_maxifier) {
+  pred_cis <- matrix(nrow = 0, ncol = total_len * interp + 1)
   for (r in 1:nrow(theta_mat)) {
-    pred_ser <- covid19_dde_predict(ser, interp, total_len, theta_mat[r,1], theta_mat[r,2], theta_mat[r,3], 0, err_maxifier)
+    pred_ser <- covid19_dde_predict(ser, interp, total_len, theta_mat[r, 1], theta_mat[r, 2], theta_mat[r, 3], 0, err_maxifier)
     pred_cis <- rbind(pred_cis, t(matrix(pred_ser)))
-    pred_ser <- covid19_dde_predict(ser, interp, total_len, theta_mat[r,1], theta_mat[r,2], theta_mat[r,3], sd_maxifier, err_maxifier)
+    pred_ser <- covid19_dde_predict(ser, interp, total_len, theta_mat[r, 1], theta_mat[r, 2], theta_mat[r, 3], sd_maxifier, err_maxifier)
     pred_cis <- rbind(pred_cis, t(matrix(pred_ser)))
   }
-  pred_ci_min <- apply(pred_cis,2,min)[seq(1,interp*total_len+1,interp)]
-  pred_ci_max <- apply(pred_cis,2,max)[seq(1,interp*total_len+1,interp)]
+  pred_ci_min <- apply(pred_cis, 2, min)[seq(1, interp * total_len + 1, interp)]
+  pred_ci_max <- apply(pred_cis, 2, max)[seq(1, interp * total_len + 1, interp)]
   # pred_ci_avg <- apply(pred_cis,2,mean)[seq(1,interp*total_len+1,interp)]
   # pred_ci_avg <- pred_cis[1,][seq(1,interp*total_len+1,interp)]\
   pred_ci_avg <- numeric(0)
-  qt_ser <- seq(0.8, 0.8, length.out=ncol(pred_cis))
+  qt_ser <- seq(0.8, 0.8, length.out = ncol(pred_cis))
   for (c in 1:ncol(pred_cis)) {
-    cand <- quantile(pred_cis[,c], c(qt_ser[c]))
+    cand <- quantile(pred_cis[, c], c(qt_ser[c]))
     cand <- max(cand, pred_ci_avg[length(pred_ci_avg)])
     pred_ci_avg <- c(pred_ci_avg, cand)
   }
-  pred_ci_avg <- pred_ci_avg[seq(1,interp*total_len+1,interp)]
-  return(data.frame(date=seq(end_date, end_date+total_len, 1), ci_min=pred_ci_min, ci_max=pred_ci_max, pred=pred_ci_avg))
+  pred_ci_avg <- pred_ci_avg[seq(1, interp * total_len + 1, interp)]
+  return(data.frame(date = seq(end_date, end_date + total_len, 1), ci_min = pred_ci_min, ci_max = pred_ci_max, pred = pred_ci_avg))
 }
 
-prev_df <- data_sh[1:28,c("date", "total_add", "total_affected")]
+prev_df <- data_sh[1:28, c("date", "total_add", "total_affected")]
 prev_df$period <- "before lockdown"
 prev_pred <- opt_bs_coeff(data_sh$total_affected[1:28], 0.5, 1.60, 1.17, 1.42, 25., 500, 0.1, 0.99, 2e2, FALSE, FALSE)
-prev_df$pred <- prev_pred[1:(length(prev_pred)-1)]
+prev_df$pred <- prev_pred[1:(length(prev_pred) - 1)]
 prev_df$total_add[nrow(prev_df)] <- 0
 
-lock_df <- data_sh[28:nrow(data_sh),c("date", "total_add", "total_affected")]
+lock_df <- data_sh[28:nrow(data_sh), c("date", "total_add", "total_affected")]
 lock_df$period <- "after lockdown"
 lock_pred <- opt_bs_coeff(data_sh$total_affected[28:nrow(data_sh)], 0.5, 0.60, 1.00, 1.80, 25., 500, 0.1, 0.99, 2e2, FALSE, FALSE)
-lock_df$pred <- lock_pred[1:(length(lock_pred)-1)]
+lock_df$pred <- lock_pred[1:(length(lock_pred) - 1)]
 fit_len <- 7
-lock_tail_fit <- smooth.spline(1:fit_len,seq(0,1,length.out=fit_len)*(lock_df$total_affected-lock_df$pred)[(nrow(lock_df)-fit_len+1):nrow(lock_df)],df=3)
-lock_df$pred[(nrow(lock_df)-fit_len+1):nrow(lock_df)] <- lock_df$pred[(nrow(lock_df)-fit_len+1):nrow(lock_df)] + lock_tail_fit$y
+lock_tail_fit <- smooth.spline(1:fit_len, seq(0, 1, length.out = fit_len) * (lock_df$total_affected - lock_df$pred)[(nrow(lock_df) - fit_len + 1):nrow(lock_df)], df = 3)
+lock_df$pred[(nrow(lock_df) - fit_len + 1):nrow(lock_df)] <- lock_df$pred[(nrow(lock_df) - fit_len + 1):nrow(lock_df)] + lock_tail_fit$y
 
 
-clip <- function(x, vmin, vmax){
-  return(min(vmax,max(vmin,x)))
+clip <- function(x, vmin, vmax) {
+  return(min(vmax, max(vmin, x)))
 }
 
-pred_cis <- gen_covid19_dde_cis(lock_df$pred, 10, 14, theta_mat_lockdown, data_sh$date[nrow(data_sh)],0.0, 0.0)
-pred_std <- lock_pred[length(lock_pred)] * c(0, exp(seq(-1,-1,length.out = 14)), exp(seq(-1,-0.5,length.out = nrow(pred_cis)-15)))
-pred_cis$total_add <- c(NaN,diff(pred_cis$pred))
+pred_cis <- gen_covid19_dde_cis(lock_df$pred, 10, 14, theta_mat_lockdown, data_sh$date[nrow(data_sh)], 0.0, 0.0)
+pred_std <- lock_pred[length(lock_pred)] * c(0, exp(seq(-1, -1, length.out = 14)), exp(seq(-1, -0.5, length.out = nrow(pred_cis) - 15)))
+pred_cis$total_add <- c(NaN, diff(pred_cis$pred))
 pred_cis$period <- "forecasted"
 pred_cis$total_affected <- NaN
-pred_cis$ci_min <- sapply(pred_cis$ci_min-pred_std/2,clip,vmin=0,vmax=Inf)
-pred_cis$ci_max <- pred_cis$ci_max + pred_std/2
-pred_cis$add_min <- sapply(c(NaN,diff(pred_cis$ci_min))-pred_std/2,clip,vmin=0,vmax=Inf)
-pred_cis$add_max <- c(NaN,diff(pred_cis$ci_max)) + pred_std/2
+pred_cis$ci_min <- sapply(pred_cis$ci_min - pred_std / 2, clip, vmin = 0, vmax = Inf)
+pred_cis$ci_max <- pred_cis$ci_max + pred_std / 2
+pred_cis$add_min <- sapply(c(NaN, diff(pred_cis$ci_min)) - pred_std / 2, clip, vmin = 0, vmax = Inf)
+pred_cis$add_max <- c(NaN, diff(pred_cis$ci_max)) + pred_std / 2
 
 
 final_df <- rbind(prev_df, lock_df)
@@ -301,131 +306,142 @@ final_df$add_min <- NaN
 final_df$add_max <- NaN
 final_df <- rbind(final_df, pred_cis)
 
-base_plot <- ggplot(data=final_df, aes(x=date, y=total_affected, color=period, linetype=period, shape=period, alpha=period, size=period)) + 
-  scale_size_manual(values=c("before lockdown"=2,"after lockdown"=2,"forecasted"=0)) +
-  scale_alpha_manual(values=c("before lockdown"=1,"after lockdown"=1,"forecasted"=1)) +
-  scale_shape_manual(values=c("before lockdown"=16,"after lockdown"=16,"forecasted"=4)) +
-  scale_color_manual(values=c("before lockdown"="gold3","after lockdown"="red3","forecasted"="blue3")) +
-  scale_fill_manual(values=c("before lockdown"="gold3","after lockdown"="red3","forecasted"="blue3")) +
-  scale_linetype_manual(values=c("before lockdown"="solid","after lockdown"="solid","forecasted"="dashed")) +
+base_plot <- ggplot(data = final_df, aes(x = date, y = total_affected, color = period, linetype = period, shape = period, alpha = period, size = period)) +
+  scale_size_manual(values = c("before lockdown" = 2, "after lockdown" = 2, "forecasted" = 0)) +
+  scale_alpha_manual(values = c("before lockdown" = 1, "after lockdown" = 1, "forecasted" = 1)) +
+  scale_shape_manual(values = c("before lockdown" = 16, "after lockdown" = 16, "forecasted" = 4)) +
+  scale_color_manual(values = c("before lockdown" = "gold3", "after lockdown" = "red3", "forecasted" = "blue3")) +
+  scale_fill_manual(values = c("before lockdown" = "gold3", "after lockdown" = "red3", "forecasted" = "blue3")) +
+  scale_linetype_manual(values = c("before lockdown" = "solid", "after lockdown" = "solid", "forecasted" = "dashed")) +
   theme(
     legend.direction = "vertical",
     legend.box = "horizontal",
-    axis.title.x=element_blank(),
+    axis.title.x = element_blank(),
   )
 
-start_date <- as.Date("2022-03-01", format="%Y-%m-%d")
-end_date <- as.Date("2022-05-30", format="%Y-%m-%d")
+start_date <- as.Date("2022-03-01", format = "%Y-%m-%d")
+end_date <- as.Date("2022-05-30", format = "%Y-%m-%d")
 
-trend <- base_plot + geom_line(aes(y=pred), size=1, alpha=0.3) + geom_point() + 
-  geom_ribbon(aes(ymin=ci_min, ymax=ci_max), linetype=3, alpha=0.2, size=0) +
-  scale_x_date(breaks=seq(start_date,end_date,by="2 days"),limits=c(start_date-1,end_date+1)) +
-  scale_y_continuous(breaks=seq(0, 6e5, 5e4),labels=label_number(suffix=" W",scale=1e-4)) + 
+trend <- base_plot + geom_line(aes(y = pred), size = 1, alpha = 0.3) + geom_point() +
+  geom_ribbon(aes(ymin = ci_min, ymax = ci_max), linetype = 3, alpha = 0.2, size = 0) +
+  scale_x_date(breaks = seq(start_date, end_date, by = "2 days"), limits = c(start_date - 1, end_date + 1)) +
+  scale_y_continuous(breaks = seq(0, 6e5, 5e4), labels = label_number(suffix = " W", scale = 1e-4)) +
   ylab("Accumulated Confirmed Affected") +
-  theme(axis.text.x=element_text(size=10, angle=90, hjust=-2, vjust=0),
-        legend.position = c(0.01, 0.99),
-        legend.justification = c("left", "top"))
+  theme(
+    axis.text.x = element_text(size = 10, angle = 90, hjust = -2, vjust = 0),
+    legend.position = c(0.01, 0.99),
+    legend.justification = c("left", "top")
+  )
 
-growth <- base_plot +  
-  geom_bar(aes(y=total_add, fill=period),size=0.2,position="stack",stat="identity") +
-  geom_errorbar(aes(ymin=add_min, ymax=add_max),width=.4,alpha=0.5,size=.4,linetype="solid") +
-  scale_x_date(breaks=seq(start_date,end_date,by="2 days"),position="top",limits=c(start_date-1,end_date+1)) +
-  scale_y_reverse(breaks=seq(0, 3e4, 5e3),labels=label_number(suffix=" K",scale=1e-3),limits=c(3e4,0)) +
-  scale_alpha_manual(values=c("before lockdown"=.5,"after lockdown"=.5,"forecasted"=.2)) +
+growth <- base_plot +
+  geom_bar(aes(y = total_add, fill = period), size = 0.2, position = "stack", stat = "identity") +
+  geom_errorbar(aes(ymin = add_min, ymax = add_max), width = .4, alpha = 0.5, size = .4, linetype = "solid") +
+  scale_x_date(breaks = seq(start_date, end_date, by = "2 days"), position = "top", limits = c(start_date - 1, end_date + 1)) +
+  scale_y_reverse(breaks = seq(0, 3e4, 5e3), labels = label_number(suffix = " K", scale = 1e-3), limits = c(3e4, 0)) +
+  scale_alpha_manual(values = c("before lockdown" = .5, "after lockdown" = .5, "forecasted" = .2)) +
   ylab("Daily Added Confirmed") +
-  theme(axis.text.x=element_blank(),
-        legend.position = c(0.01, 0.01),
-        legend.justification = c("left", "bottom"),)
+  theme(
+    axis.text.x = element_blank(),
+    legend.position = c(0.01, 0.01),
+    legend.justification = c("left", "bottom"),
+  )
 
-grid.arrange(trend, growth, ncol=1, heights=c(3,1))
+grid.arrange(trend, growth, ncol = 1, heights = c(3, 1))
 
-pred_df <- final_df[which(final_df$period=="forecasted"),c("date","pred","ci_min","ci_max","total_add","add_min","add_max")]
+pred_df <- final_df[which(final_df$period == "forecasted"), c("date", "pred", "ci_min", "ci_max", "total_add", "add_min", "add_max")]
 for (r_ in 2:nrow(pred_df)) {
-  print(pred_df[r_,"ci_max"] - pred_df[r_-1,"ci_min"] - pred_df[r_,"add_max"])
+  print(pred_df[r_, "ci_max"] - pred_df[r_ - 1, "ci_min"] - pred_df[r_, "add_max"])
 }
-write.table(pred_df[2:nrow(pred_df), ],"covid19_forecasted_0517_0530_SH_Whale.csv",row.names=FALSE,col.names=TRUE,sep=",")
+write.table(pred_df[2:nrow(pred_df), ], "covid19_forecasted_0517_0530_SH_Whale.csv", row.names = FALSE, col.names = TRUE, sep = ",")
 
 
 ######################################################################################################
 
 data_sh_prev_pred <- read.csv("covid19_forecasted_0517_0530_SH_Whale.csv")
-data_sh_prev_pred$date <- as.Date(data_sh_prev_pred$date, format="%Y-%m-%d")
-data_valid_pred <- data_sh[,c("date","total_add")]
+data_sh_prev_pred$date <- as.Date(data_sh_prev_pred$date, format = "%Y-%m-%d")
+data_valid_pred <- data_sh[, c("date", "total_add")]
 data_valid_pred$method <- "truth"
 data_valid_pred$add_min <- NaN
 data_valid_pred$add_max <- NaN
 
-cmpst_data <- data_valid_pred[which(data_valid_pred$date == min(data_sh_prev_pred$date)-1),"total_add"]
-data_tmp <- data_sh_prev_pred[,c("date","total_add","add_min","add_max")]
-cmpst_df <- data.frame(date = c(min(data_tmp$date)-1),total_add = c(cmpst_data),add_min = c(cmpst_data),add_max = c(cmpst_data))
-data_tmp <- rbind(cmpst_df,data_tmp)
+cmpst_data <- data_valid_pred[which(data_valid_pred$date == min(data_sh_prev_pred$date) - 1), "total_add"]
+data_tmp <- data_sh_prev_pred[, c("date", "total_add", "add_min", "add_max")]
+cmpst_df <- data.frame(date = c(min(data_tmp$date) - 1), total_add = c(cmpst_data), add_min = c(cmpst_data), add_max = c(cmpst_data))
+data_tmp <- rbind(cmpst_df, data_tmp)
 data_tmp$method <- "predicted"
 data_valid_pred <- rbind(data_valid_pred, data_tmp)
-ggplot(data=data_valid_pred, aes(x=date, y=total_add, color=method, linetype=method, shape=method, alpha=method, size=method)) + 
-  scale_size_manual(values=c("truth"=0.8,"predicted"=0.8)) +
-  scale_alpha_manual(values=c("truth"=0.8,"predicted"=0.8)) +
-  scale_shape_manual(values=c("truth"=16,"predicted"=4)) +
-  scale_color_manual(values=c("truth"="gold3","predicted"="blue3")) +
-  scale_fill_manual(values=c("truth"="gold3","predicted"="blue3")) +
-  scale_linetype_manual(values=c("truth"="solid","predicted"="dashed")) +
+ggplot(data = data_valid_pred, aes(x = date, y = total_add, color = method, linetype = method, shape = method, alpha = method, size = method)) +
+  scale_size_manual(values = c("truth" = 0.8, "predicted" = 0.8)) +
+  scale_alpha_manual(values = c("truth" = 0.8, "predicted" = 0.8)) +
+  scale_shape_manual(values = c("truth" = 16, "predicted" = 4)) +
+  scale_color_manual(values = c("truth" = "gold3", "predicted" = "blue3")) +
+  scale_fill_manual(values = c("truth" = "gold3", "predicted" = "blue3")) +
+  scale_linetype_manual(values = c("truth" = "solid", "predicted" = "dashed")) +
   theme(
     legend.direction = "vertical",
     legend.box = "horizontal",
-    axis.title.x=element_blank(),
-  ) + 
-  geom_line(aes(y=total_add)) + geom_point(aes(y=total_add),size=1.5) +
-  geom_ribbon(aes(ymin=add_min, ymax=add_max), linetype=3, alpha=0.2, size=0) +
-  scale_x_date(breaks=seq(min(data_valid_pred$date),max(data_valid_pred$date),by="2 days")) +
-  scale_y_continuous(breaks=seq(0, 3e4, 5e3),labels=label_number(suffix=" K",scale=1e-3)) + 
+    axis.title.x = element_blank(),
+  ) +
+  geom_line(aes(y = total_add)) +
+  geom_point(aes(y = total_add), size = 1.5) +
+  geom_ribbon(aes(ymin = add_min, ymax = add_max), linetype = 3, alpha = 0.2, size = 0) +
+  scale_x_date(breaks = seq(min(data_valid_pred$date), max(data_valid_pred$date), by = "2 days")) +
+  scale_y_continuous(breaks = seq(0, 3e4, 5e3), labels = label_number(suffix = " K", scale = 1e-3)) +
   ylab("Daily Confirmed Incremental") +
-  theme(axis.text.x=element_text(size=10, angle=90, hjust=-2, vjust=0),
-        legend.position = c(0.01, 0.99),
-        legend.justification = c("left", "top"))
+  theme(
+    axis.text.x = element_text(size = 10, angle = 90, hjust = -2, vjust = 0),
+    legend.position = c(0.01, 0.99),
+    legend.justification = c("left", "top")
+  )
 
 ######################################################################################################
 
-base_plot <- ggplot(data=final_df[which(final_df$period!="before lockdown"),], aes(x=date, y=total_affected, color=period, linetype=period, shape=period, alpha=period, size=period)) + 
-  scale_size_manual(values=c("after lockdown"=2,"forecasted"=0)) +
-  scale_alpha_manual(values=c("after lockdown"=1,"forecasted"=1)) +
-  scale_shape_manual(values=c("after lockdown"=16,"forecasted"=4)) +
-  scale_color_manual(values=c("after lockdown"="red3","forecasted"="blue3")) +
-  scale_fill_manual(values=c("after lockdown"="red3","forecasted"="blue3")) +
-  scale_linetype_manual(values=c("after lockdown" = "solid","forecasted"="dashed")) +
+base_plot <- ggplot(data = final_df[which(final_df$period != "before lockdown"), ], aes(x = date, y = total_affected, color = period, linetype = period, shape = period, alpha = period, size = period)) +
+  scale_size_manual(values = c("after lockdown" = 2, "forecasted" = 0)) +
+  scale_alpha_manual(values = c("after lockdown" = 1, "forecasted" = 1)) +
+  scale_shape_manual(values = c("after lockdown" = 16, "forecasted" = 4)) +
+  scale_color_manual(values = c("after lockdown" = "red3", "forecasted" = "blue3")) +
+  scale_fill_manual(values = c("after lockdown" = "red3", "forecasted" = "blue3")) +
+  scale_linetype_manual(values = c("after lockdown" = "solid", "forecasted" = "dashed")) +
   theme(
     legend.direction = "vertical",
     legend.box = "horizontal",
-    axis.title.x=element_blank(),
+    axis.title.x = element_blank(),
   )
 
-start_date <- as.Date("2022-03-28", format="%Y-%m-%d")
-end_date <- as.Date("2022-05-07", format="%Y-%m-%d")
+start_date <- as.Date("2022-03-28", format = "%Y-%m-%d")
+end_date <- as.Date("2022-05-07", format = "%Y-%m-%d")
 
-trend <- base_plot + geom_line(aes(y=pred), size=1, alpha=0.3) + geom_point() + 
-  geom_ribbon(aes(ymin=ci_min, ymax=ci_max), linetype=3, alpha=0.2, size=0) +
-  scale_x_date(breaks=seq(start_date,end_date,by="1 days"),limits=c(start_date-1,end_date+1)) +
-  scale_y_continuous(breaks=seq(0, 6e5, 5e4),labels=label_number(suffix=" W",scale=1e-4)) + 
+trend <- base_plot + geom_line(aes(y = pred), size = 1, alpha = 0.3) + geom_point() +
+  geom_ribbon(aes(ymin = ci_min, ymax = ci_max), linetype = 3, alpha = 0.2, size = 0) +
+  scale_x_date(breaks = seq(start_date, end_date, by = "1 days"), limits = c(start_date - 1, end_date + 1)) +
+  scale_y_continuous(breaks = seq(0, 6e5, 5e4), labels = label_number(suffix = " W", scale = 1e-4)) +
   ylab("Accumulated Confirmed Affected") +
-  theme(axis.text.x=element_text(size=10, angle=90, hjust=-2, vjust=0),
-        legend.position = c(0.01, 0.99),
-        legend.justification = c("left", "top"))
+  theme(
+    axis.text.x = element_text(size = 10, angle = 90, hjust = -2, vjust = 0),
+    legend.position = c(0.01, 0.99),
+    legend.justification = c("left", "top")
+  )
 
-growth <- base_plot +  
-  geom_bar(aes(y=total_add, fill=period),size=0.2,position="stack",stat="identity") +
-  geom_errorbar(aes(ymin=add_min, ymax=add_max),width=.4,alpha=0.5,size=.4,linetype="solid") +
-  scale_x_date(breaks=seq(start_date,end_date,by="1 days"),position="top",limits=c(start_date-1,end_date+1)) +
-  scale_y_reverse(breaks=seq(0, 3e4, 5e3),labels=label_number(suffix=" K",scale=1e-3),limits=c(3e4,0)) +
-  scale_alpha_manual(values=c("after lockdown"=.5,"forecasted"=.2)) +
+growth <- base_plot +
+  geom_bar(aes(y = total_add, fill = period), size = 0.2, position = "stack", stat = "identity") +
+  geom_errorbar(aes(ymin = add_min, ymax = add_max), width = .4, alpha = 0.5, size = .4, linetype = "solid") +
+  scale_x_date(breaks = seq(start_date, end_date, by = "1 days"), position = "top", limits = c(start_date - 1, end_date + 1)) +
+  scale_y_reverse(breaks = seq(0, 3e4, 5e3), labels = label_number(suffix = " K", scale = 1e-3), limits = c(3e4, 0)) +
+  scale_alpha_manual(values = c("after lockdown" = .5, "forecasted" = .2)) +
   ylab("Daily Added Confirmed") +
-  theme(axis.text.x=element_blank(),
-        legend.position = c(0.01, 0.01),
-        legend.justification = c("left", "bottom"),)
+  theme(
+    axis.text.x = element_blank(),
+    legend.position = c(0.01, 0.01),
+    legend.justification = c("left", "bottom"),
+  )
 
-grid.arrange(trend, growth, ncol=1, heights=c(3,1))
+grid.arrange(trend, growth, ncol = 1, heights = c(3, 1))
 
 
 library(scatterplot3d)
-source('addgrids3d.r')
+source("addgrids3d.r")
 theta_df <- data.frame(theta_mat_lockdown)
 colnames(theta_df) <- c("kappa", "mu", "tau")
-scatterplot3d(theta_df, type="h", pch = 1, color="darkgreen", grid=FALSE, box=FALSE)
+scatterplot3d(theta_df, type = "h", pch = 1, color = "darkgreen", grid = FALSE, box = FALSE)
 addgrids3d(theta_df, grid = c("xy", "xz", "yz"))
