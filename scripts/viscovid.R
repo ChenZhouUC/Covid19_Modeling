@@ -55,11 +55,11 @@ DrawLinePlot <- function(df,
 
   # compare the date range
   if (all(time_seq_set %in% time_seq)) {
-    print("Dates chose were all in the range.")
+    print(sprintf("Dates chosen are all in the range given: [%s - %s] . Start plotting...", begin_date, term_date))
     begin_date <- begin_date_set
     term_date <- term_date_set
   } else {
-    return("Dates chose were NOT in the range!")
+    print(sprintf("Dates chosen are NOT in the range given: [%s - %s] . Please re-specify!", begin_date, term_date))
   }
 
   # convert original df
@@ -77,30 +77,36 @@ DrawLinePlot <- function(df,
   # assign params
   label_map <- color_shape_map[["label_map"]]
   color_map <- color_shape_map[["color_map"]]
-  shape_size_map <- color_shape_map[["shape_size_map"]]
+  shape_map <- color_shape_map[["shape_map"]]
 
   line_yaxis_unit <- axis_map[["line_yaxis_unit"]]
-  line_yaxis_unit_scale <- axis_map[["line_yaxis_unit_scale"]]
+  line_yaxis_unit_scale <- ifelse(line_yaxis_unit == "K", 0.001,
+    ifelse(line_yaxis_unit == "W", 0.0001, 1)
+  )
   line_ylimit <- axis_map[["line_ylimit"]]
   line_y_breaks <- axis_map[["line_y_breaks"]]
   line_size <- axis_map[["line_size"]]
+  line_alpha <- axis_map[["line_alpha"]]
 
-  bar_yaxis_unit <- axis_map[["bar_yaxis_unitbar_yaxis_unit"]]
-  bar_yaxis_unit_scale <- axis_map[["bar_yaxis_unit_scale"]]
+  bar_yaxis_unit <- axis_map[["bar_yaxis_unit"]]
+  bar_yaxis_unit_scale <- ifelse(bar_yaxis_unit == "K", 0.001,
+    ifelse(bar_yaxis_unit == "W", 0.0001, 1)
+  )
   bar_ylimit <- axis_map[["bar_ylimit"]]
   bar_y_breaks <- axis_map[["bar_y_breaks"]]
   bar_width <- axis_map[["bar_width"]]
+  bar_alpha <- axis_map[["bar_alpha"]]
 
   title <- axis_map[["title"]]
-  ylab_top <- axis_map[["ylab_top"]]
-  ylab_bottom <- axis_map[["ylab_bottom"]]
+  ylab_line <- axis_map[["ylab_line"]]
+  ylab_bar <- axis_map[["ylab_bar"]]
 
   # plot accumulation
   total_trend <- ggplot() +
-    geom_line(data = df_acc, aes(x = date, y = acc, color = type), size = line_size, alpha = .5) +
+    geom_line(data = df_acc, aes(x = date, y = acc, color = type), size = line_size, alpha = line_alpha) +
     geom_point(data = df_acc, aes(x = date, y = acc, color = type, shape = type), size = line_size) +
     scale_color_manual(name = "types", label = label_map, values = color_map) +
-    scale_shape_manual(name = "types", label = label_map, values = shape_size_map) +
+    scale_shape_manual(name = "types", label = label_map, values = shape_map) +
     scale_x_date(breaks = seq(begin_date, term_date, by = "1 days"), limits = c(begin_date - 1, term_date + 1)) +
     scale_y_continuous(
       breaks = seq(line_ylimit[1], line_ylimit[2], line_y_breaks),
@@ -115,24 +121,22 @@ DrawLinePlot <- function(df,
       axis.text.x = element_text(size = xlabel_size, angle = 90, hjust = -2, vjust = 0),
       axis.title.x = element_blank()
     ) +
-    ylab(ylab_top) +
+    ylab(ylab_line) +
     ggtitle(title)
 
   # plot new add
   sub_df <- filter(df_acc, type != "total")
-  new_label_map <- label_map[!label_map == "total"]
-  new_color_map <- color_map[names(color_map) != "total"]
 
   total_add <- ggplot(data = sub_df, aes(x = date, y = add)) +
-    geom_bar(aes(fill = type), width = bar_width, position = "stack", stat = "identity") +
-    scale_fill_manual(name = "types", label = new_label_map, values = new_color_map) +
+    geom_bar(aes(fill = type), width = bar_width, position = "stack", stat = "identity", alpha = bar_alpha) +
+    scale_fill_manual(name = "types", label = label_map, values = color_map) +
     scale_x_date(breaks = seq(begin_date, term_date, by = "1 days"), position = "top", limits = c(begin_date - 1, term_date + 1)) +
     scale_y_reverse(
       breaks = seq(bar_ylimit[1], bar_ylimit[2], bar_y_breaks),
       labels = label_number(suffix = paste("", bar_yaxis_unit), scale = bar_yaxis_unit_scale),
       limits = rev(bar_ylimit)
     ) +
-    ylab(ylab_bottom) +
+    ylab(ylab_bar) +
     theme(
       legend.position = legend_position_bottom,
       legend.justification = c("left", "bottom"),
