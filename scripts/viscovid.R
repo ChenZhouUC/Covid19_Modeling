@@ -60,6 +60,7 @@ DrawLinePlot <- function(df,
     term_date <- term_date_set
   } else {
     print(sprintf("Dates chosen are NOT in the range given: [%s - %s] . Please re-specify!", begin_date, term_date))
+    return(NULL)
   }
 
   # convert original df

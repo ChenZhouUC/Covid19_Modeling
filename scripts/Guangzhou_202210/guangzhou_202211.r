@@ -9,7 +9,7 @@ data_gz$confirmed
 data_gz$asymptomatic
 
 # time range def
-time_range <- c("2022-10-01", "2022-11-22")
+time_range <- c("2022-01-01", "2022-11-22")
 # color shape def
 color_shape_map <- dict()
 color_shape_map[["label_map"]] <- c("confirmed", "asymptomatic", "total")
