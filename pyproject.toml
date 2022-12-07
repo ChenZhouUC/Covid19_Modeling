@@ -6,8 +6,9 @@ authors = ["ChenZhouUC <chenzhou@uchicago.edu>"]
 
 [tool.poetry.dependencies]
 python = "^3.7.12"
-pyclean = "^2.2.0"
 pip = "^22.3.1"
+pyclean = "^2.2.0"
+xeus-python = "^0.14.3"
 numpy = "1.20.3"
 pandas = "1.2.5"
 scipy = "1.6.1"
@@ -26,7 +27,6 @@ jupyterlab-system-monitor = "^0.8.0"
 jupyterlab-git = "^0.39.3"
 black = "^22.10.0"
 isort = "^5.10.1"
-xeus-python = "^0.14.3"
 
 [tool.poetry.dev-dependencies]
 poethepoet = "^0.10.0"
