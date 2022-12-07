@@ -1,13 +1,51 @@
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Folder view configuration files
 .DS_Store
-.ipynb*
+Desktop.ini
+
+# Thumbnail cache files
+._*
+Thumbs.db
+
+# Files that might appear on external disks
+.Spotlight-V100
+.Trashes
+
+# Compiled Python files
+*.pyc
 __pycache__
+
+# Application specific files
+venv
+node_modules
+.sass-cache
+
+# Temp File
+*.swp
+*.swa
+*.swo
+
+# Latex tmp files
 *.aux
 *.log
 *.nav
 *.out
-/reports/**/*.pdf
-/reports/**/*.ppt
 *.snm
 *.gz
 *.toc
+
+# R tmp files
+*.RData
 .Rhistory
+
+# Poetry
+poetry.lock
+pyproject.toml
+
+# Tensorboard meta files
+tensorboard_tmp/
+
+# Project specific files
+*.csv
