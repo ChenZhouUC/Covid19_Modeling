@@ -45,3 +45,4 @@ tensorboard_tmp/
 
 # Project specific files
 *.csv
+*.pdf
