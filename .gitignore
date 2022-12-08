@@ -40,10 +40,6 @@ node_modules
 *.RData
 .Rhistory
 
-# Poetry
-poetry.lock
-pyproject.toml
-
 # Tensorboard meta files
 tensorboard_tmp/
 
