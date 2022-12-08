@@ -43,8 +43,5 @@ node_modules
 # Tensorboard meta files
 tensorboard_tmp/
 
-# Poetry
-poetry.lock
-
 # Project specific files
 *.pdf
