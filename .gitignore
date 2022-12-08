@@ -47,5 +47,4 @@ tensorboard_tmp/
 poetry.lock
 
 # Project specific files
-*.csv
 *.pdf
